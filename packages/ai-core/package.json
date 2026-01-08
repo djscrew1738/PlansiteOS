@@ -1,0 +1,19 @@
+{
+  "name": "@pipelineos/ai-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI provider abstraction layer",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.3",
+    "openai": "^4.24.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

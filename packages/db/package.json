@@ -1,0 +1,19 @@
+{
+  "name": "@pipelineos/db",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Database migrations and schema",
+  "main": "migrate.js",
+  "scripts": {
+    "migrate": "node migrate.js up",
+    "migrate:down": "node migrate.js down",
+    "migrate:create": "node migrate.js create",
+    "seed": "node seeds/index.js",
+    "lint": "eslint .",
+    "clean": "echo 'No build artifacts to clean'"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  }
+}
