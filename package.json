@@ -49,5 +49,8 @@
     "crm"
   ],
   "author": "CTL Plumbing LLC",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2"
+  }
 }

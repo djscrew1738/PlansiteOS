@@ -15,6 +15,7 @@ const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
 app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:3000',
+    'http://localhost:3002',
     'http://localhost:5000',
     'http://100.109.158.92:5000',
     'https://ctlplumbingllc.com',
