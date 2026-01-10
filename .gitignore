@@ -1,14 +1,6 @@
-# Environment
-.env .env.*
-!.env.example
-# Node
-node_modules/ npm-debug.log* yarn.lock
-# Python
-__pycache__/ *.pyc .venv/
-# Build outputs
-dist/ build/ .next/
-# OS junk
-.DS_Store
-# Logs
-logs/
-*.log
+node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.env
+.venv/
