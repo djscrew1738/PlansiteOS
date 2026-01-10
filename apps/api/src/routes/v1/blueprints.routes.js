@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const BlueprintService = require('../../modules/blueprints/blueprints.service');
+const dxfProcessor = require('../../services/dxf.processor');
 const {
   uploadBlueprint,
   validateFile,
@@ -17,7 +18,7 @@ const logger = require('../../platform/observability/logger');
  * POST /api/blueprints/upload
  * Upload and analyze a blueprint
  */
-router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, next) => {
+router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _next) => {
   const corrId = correlationId.get();
   let blueprintId = null;
 
@@ -62,6 +63,29 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
     const projectName = req.body.projectName || 'Untitled Project';
     const projectAddress = req.body.projectAddress || null;
 
+    let analysisResults = null;
+    let blueprintStatus = 'pending'; // Default status
+
+    // Check if the uploaded file is a DXF
+    const isDxf = fileMetadata.path.toLowerCase().endsWith('.dxf');
+
+    if (isDxf) {
+      logger.info('Processing DXF file', {
+        correlationId: corrId,
+        filePath: fileMetadata.path
+      });
+      // Process DXF and store directly
+      analysisResults = await dxfProcessor.processDxfFile(fileMetadata.path);
+      blueprintStatus = 'processed-dxf'; // Custom status for DXF files
+    } else {
+      // Existing AI analysis for images/PDFs
+      logger.info('Starting AI analysis for image/PDF', {
+        correlationId: corrId,
+        filePath: fileMetadata.path
+      });
+      blueprintStatus = 'processing';
+    }
+    
     // Create blueprint record in database
     const txManager = getTransactionManager(db);
 
@@ -69,9 +93,10 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
       const result = await client.query(
         `INSERT INTO blueprints (
           project_name, project_address, file_name, file_path,
-          file_size, file_type, status, correlation_id, created_at, updated_at
+          file_size, file_type, status, correlation_id,
+          analysis_data, analysis_completed_at, created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
         RETURNING *`,
         [
           projectName,
@@ -80,8 +105,10 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
           fileMetadata.path,
           fileMetadata.size,
           fileMetadata.mimeType,
-          'pending',
-          corrId
+          blueprintStatus, // Use determined status
+          corrId,
+          analysisResults ? JSON.stringify(analysisResults) : null, // Store DXF data directly
+          analysisResults ? db.fn.now() : null // Set completion time for DXF
         ]
       );
 
@@ -92,35 +119,37 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
 
     logger.info('Blueprint record created', {
       correlationId: corrId,
-      blueprintId: blueprintId
-    });
-
-    // Start analysis (async)
-    // Update status to processing
-    await db.query(
-      `UPDATE blueprints
-       SET status = $1, analysis_started_at = NOW()
-       WHERE id = $2`,
-      ['processing', blueprintId]
-    );
-
-    // Perform analysis
-    const analysisResults = await BlueprintService.analyzeBlueprint(
-      fileMetadata.path,
-      {
-        correlationId: corrId,
-        projectName: projectName
-      }
-    );
-
-    // Save analysis results
-    await BlueprintService.saveAnalysisResults(blueprintId, analysisResults);
-
-    logger.info('Blueprint analysis completed and saved', {
-      correlationId: corrId,
       blueprintId: blueprintId,
-      totalFixtures: analysisResults.totalFixtures
+      status: blueprintStatus
     });
+
+    if (!isDxf) {
+      // Perform AI analysis only for non-DXF files
+      await db.query(
+        `UPDATE blueprints
+         SET status = $1, analysis_started_at = NOW()
+         WHERE id = $2`,
+        ['processing', blueprintId]
+      );
+
+      const aiAnalysisResults = await BlueprintService.analyzeBlueprint(
+        fileMetadata.path,
+        {
+          correlationId: corrId,
+          projectName: projectName
+        }
+      );
+
+      // Save AI analysis results
+      await BlueprintService.saveAnalysisResults(blueprintId, aiAnalysisResults);
+      analysisResults = aiAnalysisResults; // Update analysisResults for response
+
+      logger.info('AI Blueprint analysis completed and saved', {
+        correlationId: corrId,
+        blueprintId: blueprintId,
+        totalFixtures: analysisResults.totalFixtures
+      });
+    }
 
     // Return response
     res.status(201).json({
@@ -132,15 +161,9 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
         projectAddress: projectAddress,
         fileName: fileMetadata.originalName,
         fileSize: fileMetadata.size,
-        status: 'completed'
+        status: analysisResults ? 'completed' : blueprintStatus // If DXF, it's completed. If AI, it's processing for now
       },
-      analysis: {
-        totalFixtures: analysisResults.totalFixtures,
-        totalRooms: analysisResults.summary.totalRooms,
-        fixtureTotals: analysisResults.fixtureTotals,
-        rooms: analysisResults.rooms,
-        analysisTime: analysisResults.analysisTime
-      }
+      analysis: analysisResults
     });
 
   } catch (error) {
@@ -188,7 +211,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
  * GET /api/blueprints/:id
  * Get blueprint analysis results
  */
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -243,7 +266,7 @@ router.get('/:id', async (req, res, next) => {
  * GET /api/blueprints
  * List all blueprints
  */
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -296,7 +319,7 @@ router.get('/', async (req, res, next) => {
  * DELETE /api/blueprints/:id
  * Delete a blueprint
  */
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -368,7 +391,7 @@ router.delete('/:id', async (req, res, next) => {
  * GET /api/blueprints/:id/summary
  * Get fixture summary for a blueprint
  */
-router.get('/:id/summary', async (req, res, next) => {
+router.get('/:id/summary', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -446,7 +469,7 @@ router.get('/:id/summary', async (req, res, next) => {
  * POST /api/blueprints/:id/annotate
  * Generate annotated blueprint with dimension lines
  */
-router.post('/:id/annotate', async (req, res, next) => {
+router.post('/:id/annotate', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {

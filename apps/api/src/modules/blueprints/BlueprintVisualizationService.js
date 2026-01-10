@@ -1,10 +1,9 @@
 // Try to load canvas - it may not be installed
-let createCanvas, loadImage, registerFont, canvasAvailable;
+let createCanvas, loadImage, canvasAvailable;
 try {
   const canvas = require('canvas');
   createCanvas = canvas.createCanvas;
   loadImage = canvas.loadImage;
-  registerFont = canvas.registerFont;
   canvasAvailable = true;
 } catch (error) {
   canvasAvailable = false;
@@ -337,7 +336,7 @@ class BlueprintVisualizationService {
    * Draw legend in bottom right corner
    * @private
    */
-  async drawLegend(ctx, analysisData, imageWidth, imageHeight, opts) {
+  async drawLegend(ctx, analysisData, _imageWidth, _imageHeight, opts) {
     try {
       // Prepare legend content
       const legendItems = this.prepareLegendContent(analysisData);

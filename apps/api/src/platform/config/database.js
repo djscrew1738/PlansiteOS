@@ -16,7 +16,7 @@ const config = {
 const pool = new Pool(config);
 
 // Handle pool errors
-pool.on('error', (err, client) => {
+pool.on('error', (err, _client) => {
   logger.error('Unexpected error on idle client', {
     error: err.message,
     stack: err.stack

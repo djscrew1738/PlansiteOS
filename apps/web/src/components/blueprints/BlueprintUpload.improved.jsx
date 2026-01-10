@@ -26,6 +26,7 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
       'image/png': ['.png'],
       'image/jpeg': ['.jpg', '.jpeg'],
       'application/pdf': ['.pdf'],
+      'application/dxf': ['.dxf'], // Add DXF file type
     },
     maxFiles: 5,
     maxSize: MAX_FILE_SIZE_MB * 1024 * 1024,
@@ -165,7 +166,7 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
             <p className="font-semibold text-gray-700">
               {isDragActive ? "Drop files here" : "Drag 'n' drop files here, or click to select"}
             </p>
-            <p className="text-xs text-gray-500 mt-1">PDF, PNG, JPG supported (Max {MAX_FILE_SIZE_MB}MB each)</p>
+            <p className="text-xs text-gray-500 mt-1">PDF, PNG, JPG, DXF supported (Max {MAX_FILE_SIZE_MB}MB each)</p>
           </div>
 
           {fileRejectionItems.length > 0 && <div className="space-y-2">{fileRejectionItems}</div>}

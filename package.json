@@ -1,57 +1,35 @@
 {
   "name": "pipelineos",
   "version": "1.0.0",
-  "private": true,
-  "description": "AI-powered plumbing bid automation platform",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "description": "PipelineOS - Lead Management & Blueprint Analysis",
+  "main": "src/app.js",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "api:dev": "npm run dev --workspace=apps/api",
-    "worker:dev": "npm run dev --workspace=apps/worker",
-    "web:dev": "npm run dev --workspace=apps/web",
-    "db:migrate": "npm run migrate --workspace=packages/db",
-    "db:seed": "npm run seed --workspace=packages/db",
-    "docker:up": "docker-compose -f infra/docker/compose/docker-compose.dev.yml up -d",
-    "docker:down": "docker-compose -f infra/docker/compose/docker-compose.dev.yml down",
-    "prepare": "husky install"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest",
+    "test:blueprint": "node test-blueprint-analysis.js",
+    "test:improvements": "node test-improvements.js",
+    "migrate": "psql $DATABASE_URL < migrations/add_transaction_support.sql && psql $DATABASE_URL < migrations/add_blueprint_analysis.sql"
   },
-  "devDependencies": {
-    "@commitlint/cli": "^18.4.3",
-    "@commitlint/config-conventional": "^18.4.3",
-    "eslint": "^8.55.0",
-    "husky": "^8.0.3",
-    "knex": "^3.1.0",
-    "lint-staged": "^15.2.0",
-    "prettier": "^3.1.1",
-    "turbo": "^1.11.2"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ctlplumbingllc/pipelineos.git"
-  },
-  "keywords": [
-    "plumbing",
-    "ai",
-    "automation",
-    "blueprint",
-    "bid",
-    "crm"
-  ],
-  "author": "CTL Plumbing LLC",
+  "keywords": ["plumbing", "crm", "ai", "blueprint"],
+  "author": "",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2"
+    "@anthropic-ai/sdk": "^0.9.1",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "canvas": "^2.11.2",
+    "uuid": "^9.0.1",
+    "pg": "^8.11.3",
+    "winston": "^3.11.0",
+    "node-cron": "^3.0.3",
+    "twilio": "^4.19.0",
+    "form-data": "^4.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "nodemon": "^3.0.2"
   }
 }

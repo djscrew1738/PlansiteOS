@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blueprint Analysis Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: #e8f5e9;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .results {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .fixture-list {
+            list-style: none;
+        }
+
+        .fixture-list li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .fixture-list li:last-child {
+            border-bottom: none;
+        }
+
+        .room-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .room-card h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .fixture-item {
+            padding: 8px;
+            background: #f8f9fa;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-top: 15px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ Blueprint Analysis Test</h1>
+            <p>Upload a plumbing blueprint to test the AI-powered analysis</p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="section">
+                <h2>📤 Upload Blueprint</h2>
+                <div class="upload-area" id="uploadArea">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p style="margin-top: 15px; font-size: 16px; color: #666;">
+                        <strong>Click to select</strong> or drag and drop your blueprint
+                    </p>
+                    <p style="font-size: 14px; color: #999; margin-top: 5px;">
+                        Supports JPG, PNG, PDF (max 50MB)
+                    </p>
+                    <input type="file" id="fileInput" class="file-input" accept="image/*,.pdf">
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div class="input-group">
+                        <label for="projectName">Project Name</label>
+                        <input type="text" id="projectName" placeholder="e.g., Smith Residence">
+                    </div>
+                    <div class="input-group">
+                        <label for="projectAddress">Project Address (optional)</label>
+                        <input type="text" id="projectAddress" placeholder="e.g., 123 Main St, Dallas TX">
+                    </div>
+                    <button class="btn" id="uploadBtn" disabled>Analyze Blueprint</button>
+                    <button class="btn btn-secondary" id="resetBtn" style="display:none;">Reset</button>
+                </div>
+
+                <div id="selectedFile" style="margin-top: 15px; display: none;">
+                    <div class="success">
+                        ✓ File selected: <strong id="fileName"></strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing blueprint with Claude Vision AI...</p>
+                <p style="font-size: 14px; color: #666; margin-top: 10px;">This usually takes 5-15 seconds</p>
+            </div>
+
+            <!-- Error Display -->
+            <div id="errorDisplay"></div>
+
+            <!-- Results Section -->
+            <div class="results" id="results">
+                <div class="section">
+                    <h2>📊 Analysis Results</h2>
+
+                    <div class="grid-2">
+                        <div class="stat-card">
+                            <h3>Total Fixtures</h3>
+                            <div class="number" id="totalFixtures">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Rooms</h3>
+                            <div class="number" id="totalRooms">0</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Analysis Time</h3>
+                        <div id="analysisTime">-</div>
+                        <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                            <strong>Blueprint ID:</strong> <span id="blueprintId">-</span><br>
+                            <strong>Correlation ID:</strong> <span id="correlationId">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🔧 Fixture Totals</h2>
+                    <ul class="fixture-list" id="fixtureTotals"></ul>
+                </div>
+
+                <div class="section">
+                    <h2>🏠 Room-by-Room Breakdown</h2>
+                    <div id="roomBreakdown"></div>
+                </div>
+
+                <div class="section">
+                    <h2>🖼️ Annotated Blueprint</h2>
+                    <button class="btn" id="generateAnnotatedBtn">Generate Annotated Blueprint</button>
+                    <div id="annotatedLoading" class="loading"></div>
+                    <div id="annotatedResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        let selectedFile = null;
+        let currentBlueprintId = null;
+
+        // Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const selectedFileDiv = document.getElementById('selectedFile');
+        const generateAnnotatedBtn = document.getElementById('generateAnnotatedBtn');
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        // File selection
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            if (fileInput.files.length > 0) {
+                selectedFile = fileInput.files[0];
+                document.getElementById('fileName').textContent = selectedFile.name;
+                selectedFileDiv.style.display = 'block';
+                uploadBtn.disabled = false;
+            }
+        }
+
+        // Upload and analyze
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const projectName = document.getElementById('projectName').value || 'Test Project';
+            const projectAddress = document.getElementById('projectAddress').value || '';
+
+            // Show loading
+            loading.classList.add('active');
+            results.style.display = 'none';
+            errorDisplay.innerHTML = '';
+            uploadBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('blueprint', selectedFile);
+                formData.append('projectName', projectName);
+                formData.append('projectAddress', projectAddress);
+
+                const response = await fetch(`${API_BASE}/api/blueprints/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                    resetBtn.style.display = 'inline-block';
+                } else {
+                    showError(data.error?.message || 'Upload failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                loading.classList.remove('active');
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // Display results
+        function displayResults(data) {
+            currentBlueprintId = data.blueprint.id;
+
+            // Summary stats
+            document.getElementById('totalFixtures').textContent = data.analysis.totalFixtures || 0;
+            document.getElementById('totalRooms').textContent = data.analysis.totalRooms || 0;
+            document.getElementById('analysisTime').textContent = `${data.analysis.analysisTime}ms`;
+            document.getElementById('blueprintId').textContent = data.blueprint.id;
+            document.getElementById('correlationId').textContent = data.correlationId;
+
+            // Fixture totals
+            const fixtureTotals = document.getElementById('fixtureTotals');
+            fixtureTotals.innerHTML = '';
+
+            for (const [type, count] of Object.entries(data.analysis.fixtureTotals || {})) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span><strong>${formatFixtureType(type)}</strong></span>
+                    <span>${count}</span>
+                `;
+                fixtureTotals.appendChild(li);
+            }
+
+            // Room breakdown
+            const roomBreakdown = document.getElementById('roomBreakdown');
+            roomBreakdown.innerHTML = '';
+
+            for (const room of data.analysis.rooms || []) {
+                const roomCard = document.createElement('div');
+                roomCard.className = 'room-card';
+
+                let fixturesHTML = '';
+                for (const fixture of room.fixtures || []) {
+                    fixturesHTML += `
+                        <div class="fixture-item">
+                            ${fixture.quantity}x ${formatFixtureType(fixture.type)}
+                            (${fixture.width}" × ${fixture.depth}")
+                            ${fixture.notes ? ' - ' + fixture.notes : ''}
+                        </div>
+                    `;
+                }
+
+                roomCard.innerHTML = `
+                    <h4>${room.name} (${room.fixtureCount} fixtures)</h4>
+                    ${fixturesHTML}
+                `;
+
+                roomBreakdown.appendChild(roomCard);
+            }
+
+            // Show results
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Generate annotated blueprint
+        generateAnnotatedBtn.addEventListener('click', async () => {
+            if (!currentBlueprintId) return;
+
+            const annotatedLoading = document.getElementById('annotatedLoading');
+            const annotatedResult = document.getElementById('annotatedResult');
+
+            annotatedLoading.classList.add('active');
+            annotatedResult.innerHTML = '';
+            generateAnnotatedBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/blueprints/${currentBlueprintId}/annotate`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    annotatedResult.innerHTML = `
+                        <div class="success" style="margin-top: 15px;">
+                            ✓ Annotated blueprint generated successfully!<br>
+                            <strong>Path:</strong> ${data.annotatedImagePath}
+                        </div>
+                        <p style="margin-top: 10px; color: #666;">
+                            The annotated blueprint with dimension lines and legend has been saved to the uploads directory.
+                        </p>
+                    `;
+                } else {
+                    showError(data.error?.message || 'Annotation failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                annotatedLoading.classList.remove('active');
+                generateAnnotatedBtn.disabled = false;
+            }
+        });
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            selectedFile = null;
+            selectedFileDiv.style.display = 'none';
+            uploadBtn.disabled = true;
+            results.style.display = 'none';
+            resetBtn.style.display = 'none';
+            errorDisplay.innerHTML = '';
+            currentBlueprintId = null;
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectAddress').value = '';
+        });
+
+        // Utility functions
+        function formatFixtureType(type) {
+            const map = {
+                'lavatory': 'Lavatory',
+                'toilet': 'Toilet',
+                'shower': 'Shower',
+                'bathtub': 'Bathtub',
+                'kitchen_sink': 'Kitchen Sink',
+                'sink': 'Sink',
+                'hose_bib': 'Hose Bib',
+                'floor_drain': 'Floor Drain',
+                'water_heater': 'Water Heater',
+                'urinal': 'Urinal',
+                'dishwasher': 'Dishwasher',
+                'washing_machine': 'Washing Machine',
+                'utility_sink': 'Utility Sink',
+                'drinking_fountain': 'Drinking Fountain',
+                'water_closet': 'Water Closet'
+            };
+            return map[type] || type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function showError(message) {
+            errorDisplay.innerHTML = `
+                <div class="error">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

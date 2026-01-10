@@ -77,7 +77,7 @@ app.use((req, res) => {
 });
 
 // Error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error('Express error handler', {
     error: err.message,
     stack: err.stack,

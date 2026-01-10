@@ -101,7 +101,7 @@ function responseLoggingMiddleware() {
  * Captures errors and includes correlation ID in response
  */
 function errorHandlingMiddleware() {
-  return (err, req, res, next) => {
+  return (err, req, res, _next) => {
     const corrId = req.correlationId || 'unknown';
 
     logger.error('Request error', {

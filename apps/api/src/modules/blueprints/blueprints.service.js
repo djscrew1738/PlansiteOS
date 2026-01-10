@@ -5,6 +5,8 @@ const db = require('@pipelineos/db');
 const { AIClient } = require('@pipelineos/ai-core');
 const { blueprintAnalysisSchema } = require('../../schemas/blueprint.schema');
 const blueprintAnalyzerPrompt = require('@pipelineos/ai-core/src/prompts/blueprint_analyzer.prompt');
+const fs = require('fs').promises;
+const path = require('path');
 
 class BlueprintService {
   constructor() {

@@ -1,7 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const logger = require('../../platform/observability/logger');
 const CircuitBreaker = require('../../platform/middleware/CircuitBreaker');
-// const { AI } = require('../../platform/config/constants'); // TODO: Create constants
+const { AI } = require('../../platform/config/constants'); // TODO: Create constants
 
 class AIService {
   constructor() {
