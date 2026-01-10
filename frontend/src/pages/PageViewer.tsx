@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Layer, Line, Stage, Text, Image as KonvaImage } from 'react-konva';
 import { getCalibration, getUpload, pageImageUrl, pageThumbUrl, setCalibration } from '../components/api';
@@ -27,6 +27,8 @@ export default function PageViewer() {
   const [scale, setScale] = useState(1);
   const lastDistRef = useRef<number | null>(null);
   const lastCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
     const uploadId = localStorage.getItem('currentUploadId');
@@ -46,24 +48,62 @@ export default function PageViewer() {
   }, [pageId]);
 
   const image = useImage(activePage ? pageImageUrl(activePage.id) : '');
+  const imageSize = useMemo(() => {
+    if (!image) return { width: 0, height: 0 };
+    return { width: image.width, height: image.height };
+  }, [image]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setStageSize({
+          width: Math.max(300, entry.contentRect.width),
+          height: Math.max(300, entry.contentRect.height),
+        });
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!image || !stageRef.current) return;
+    const scaleX = stageSize.width / image.width;
+    const scaleY = stageSize.height / image.height;
+    const nextScale = Math.min(scaleX, scaleY, 1);
+    setScale(nextScale);
+    stageRef.current.scale({ x: nextScale, y: nextScale });
+    stageRef.current.position({ x: 0, y: 0 });
+  }, [image, stageSize]);
+
+  const zoomTo = (nextScale: number, pointer?: { x: number; y: number }) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const oldScale = stage.scaleX();
+    const pos = pointer || stage.getPointerPosition() || { x: stageSize.width / 2, y: stageSize.height / 2 };
+    const mousePointTo = {
+      x: (pos.x - stage.x()) / oldScale,
+      y: (pos.y - stage.y()) / oldScale,
+    };
+    setScale(nextScale);
+    stage.scale({ x: nextScale, y: nextScale });
+    const newPos = {
+      x: pos.x - mousePointTo.x * nextScale,
+      y: pos.y - mousePointTo.y * nextScale,
+    };
+    stage.position(newPos);
+  };
 
   const handleWheel = (e: any) => {
     e.evt.preventDefault();
     const stage = stageRef.current;
+    if (!stage) return;
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
-    };
     const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
-    setScale(newScale);
-    stage.scale({ x: newScale, y: newScale });
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
-    stage.position(newPos);
+    zoomTo(Math.max(0.2, Math.min(5, newScale)), pointer || undefined);
   };
 
   const getStagePoint = (stage: any) => {
@@ -112,8 +152,7 @@ export default function PageViewer() {
 
     const scaleBy = dist / lastDistRef.current;
     const newScale = Math.max(0.2, Math.min(5, scale * scaleBy));
-    setScale(newScale);
-    stage.scale({ x: newScale, y: newScale });
+    zoomTo(newScale, center);
 
     const stagePos = stage.position();
     const dxCenter = center.x - lastCenterRef.current.x;
@@ -161,35 +200,68 @@ export default function PageViewer() {
           />
         ))}
       </div>
-      <div className="viewer">
-        <Stage
-          width={window.innerWidth - 220}
-          height={window.innerHeight - 160}
-          draggable
-          onWheel={handleWheel}
-          onClick={onStageClick}
-          onTap={onStageClick}
-          onTouchMove={onTouchMove}
-          ref={stageRef}
-          scaleX={scale}
-          scaleY={scale}
-        >
-          <Layer>
-            {image && <KonvaImage image={image} />}
-            {points.length === 2 && (
-              <Line points={[points[0].x, points[0].y, points[1].x, points[1].y]} stroke="#2f6fed" strokeWidth={2} />
-            )}
-            {calibration && (
-              <Text
-                text={`Scale: ${calibration.pixelsPerUnit.toFixed(2)} px/${calibration.realUnit.toLowerCase()}`}
-                x={20}
-                y={20}
-                fill="#2f6fed"
-                fontSize={16}
-              />
-            )}
-          </Layer>
-        </Stage>
+      <div className="viewer-panel">
+        <div className="viewer-toolbar card">
+          <strong>Plan Viewer</strong>
+          <span>Zoom: {(scale * 100).toFixed(0)}%</span>
+          <button className="button" onClick={() => zoomTo(Math.min(5, scale * 1.2))}>+</button>
+          <button className="button" onClick={() => zoomTo(Math.max(0.2, scale * 0.8))}>-</button>
+          <button className="button" onClick={() => zoomTo(1)}>100%</button>
+          <button
+            className="button"
+            onClick={() => {
+              if (!image) return;
+              const scaleX = stageSize.width / image.width;
+              const scaleY = stageSize.height / image.height;
+              zoomTo(Math.min(scaleX, scaleY, 1));
+            }}
+          >
+            Fit
+          </button>
+          <div className="toggle-group">
+            <button className="toggle" disabled>Layers (soon)</button>
+            <button className="toggle" disabled>Snap-to-line (soon)</button>
+          </div>
+        </div>
+        <div className="viewer" ref={containerRef}>
+          <Stage
+            width={stageSize.width}
+            height={stageSize.height}
+            draggable
+            onWheel={handleWheel}
+            onClick={onStageClick}
+            onTap={onStageClick}
+            onTouchMove={onTouchMove}
+            ref={stageRef}
+            scaleX={scale}
+            scaleY={scale}
+          >
+            <Layer>
+              {image && <KonvaImage image={image} />}
+              {points.length === 2 && (
+                <Line points={[points[0].x, points[0].y, points[1].x, points[1].y]} stroke="#2f6fed" strokeWidth={2} />
+              )}
+              {calibration && (
+                <Text
+                  text={`Scale: ${calibration.pixelsPerUnit.toFixed(2)} px/${calibration.realUnit.toLowerCase()}`}
+                  x={20}
+                  y={20}
+                  fill="#2f6fed"
+                  fontSize={16}
+                />
+              )}
+              {image && (
+                <Text
+                  text={`Resolution: ${imageSize.width} x ${imageSize.height}`}
+                  x={20}
+                  y={44}
+                  fill="#6b7a99"
+                  fontSize={12}
+                />
+              )}
+            </Layer>
+          </Stage>
+        </div>
       </div>
       {showModal && (
         <div className="modal">

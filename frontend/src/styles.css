@@ -73,11 +73,38 @@ main {
   max-height: 80vh;
 }
 
+.viewer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.viewer-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 6px;
+}
+
+.toggle {
+  background: #e7ebf3;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 .viewer {
   flex: 1;
   background: #fff;
   border-radius: 12px;
   padding: 8px;
+  min-height: 65vh;
 }
 
 .thumb {
