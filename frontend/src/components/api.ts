@@ -56,6 +56,22 @@ export async function updatePage(pageId: string, payload: any) {
   return res.json();
 }
 
+export async function createPipeline(payload: any) {
+  const res = await fetch(`${API_BASE}/api/pipelines`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Pipeline create failed');
+  return res.json();
+}
+
+export async function listPipelines(pageId: string) {
+  const res = await fetch(`${API_BASE}/api/pages/${pageId}/pipelines`);
+  if (!res.ok) throw new Error('Pipeline list failed');
+  return res.json();
+}
+
 export function pageImageUrl(pageId: string) {
   return `${API_BASE}/api/pages/${pageId}/image`;
 }

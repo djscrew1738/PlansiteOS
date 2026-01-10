@@ -39,6 +39,28 @@ class RealUnit(str, PyEnum):
     MM = "MM"
 
 
+class PipelineSystem(str, PyEnum):
+    WATER_COLD = "WATER_COLD"
+    WATER_HOT = "WATER_HOT"
+    SEWER = "SEWER"
+    VENT = "VENT"
+    GAS = "GAS"
+
+
+class PipelinePhase(str, PyEnum):
+    UNDERGROUND = "UNDERGROUND"
+    TOP_OUT = "TOP_OUT"
+    TRIM = "TRIM"
+
+
+class NodeType(str, PyEnum):
+    FIXTURE = "FIXTURE"
+    JUNCTION = "JUNCTION"
+    STACK = "STACK"
+    CLEANOUT = "CLEANOUT"
+    TIE_IN = "TIE_IN"
+
+
 class Project(Base):
     __tablename__ = "projects"
 
@@ -91,6 +113,7 @@ class Page(Base):
 
     upload = relationship("Upload", back_populates="pages")
     calibration = relationship("Calibration", back_populates="page", uselist=False)
+    pipelines = relationship("Pipeline", back_populates="page")
 
 
 class Calibration(Base):
@@ -109,3 +132,50 @@ class Calibration(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     page = relationship("Page", back_populates="calibration")
+
+
+class Pipeline(Base):
+    __tablename__ = "pipelines"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    page_id = Column(UUID(as_uuid=True), ForeignKey("pages.id"), nullable=False)
+    system_type = Column(Enum(PipelineSystem), nullable=False)
+    name = Column(String, nullable=False)
+    phase = Column(Enum(PipelinePhase), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    page = relationship("Page", back_populates="pipelines")
+    segments = relationship("Segment", back_populates="pipeline")
+    nodes = relationship("Node", back_populates="pipeline")
+
+
+class Node(Base):
+    __tablename__ = "nodes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pipeline_id = Column(UUID(as_uuid=True), ForeignKey("pipelines.id"), nullable=False)
+    node_type = Column(Enum(NodeType), nullable=False)
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+    metadata = Column(JSON, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    pipeline = relationship("Pipeline", back_populates="nodes")
+
+
+class Segment(Base):
+    __tablename__ = "segments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pipeline_id = Column(UUID(as_uuid=True), ForeignKey("pipelines.id"), nullable=False)
+    points = Column(JSON, nullable=False)
+    diameter = Column(String, nullable=False)
+    material = Column(String, nullable=False)
+    slope = Column(Float, nullable=True)
+    depth = Column(Float, nullable=True)
+    phase = Column(Enum(PipelinePhase), nullable=False)
+    tags = Column(JSON, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    pipeline = relationship("Pipeline", back_populates="segments")

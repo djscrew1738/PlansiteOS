@@ -3,6 +3,7 @@ import NewProjectPage from './pages/NewProjectPage';
 import ProjectPage from './pages/ProjectPage';
 import UploadPage from './pages/UploadPage';
 import PageViewer from './pages/PageViewer';
+import PlumbingWorkspace from './pages/PlumbingWorkspace';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/projects/:projectId" element={<ProjectPage />} />
           <Route path="/uploads/:uploadId" element={<UploadPage />} />
           <Route path="/pages/:pageId" element={<PageViewer />} />
+          <Route path="/workspaces/:projectId/plumbing" element={<PlumbingWorkspace />} />
         </Routes>
       </main>
     </div>

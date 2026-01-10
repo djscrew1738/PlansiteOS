@@ -10,7 +10,7 @@ from rq import Queue
 from .config import settings
 from .db import get_db
 from .jobs import process_upload
-from .models import Calibration, Page, Project, Upload, UploadStatus
+from .models import Calibration, Page, Project, Upload, UploadStatus, Pipeline, Node, Segment
 from .rate_limit import UploadRateLimitMiddleware
 from .schemas import (
     CalibrationIn,
@@ -18,6 +18,12 @@ from .schemas import (
     HealthOut,
     PageUpdate,
     PageSelection,
+    PipelineCreate,
+    PipelineOut,
+    NodeCreate,
+    NodeOut,
+    SegmentCreate,
+    SegmentOut,
     ProjectCreate,
     ProjectOut,
     UploadCreateResponse,
@@ -233,3 +239,66 @@ async def healthcheck(db: Session = Depends(get_db)):
         storage_ok = False
 
     return HealthOut(database=db_ok, redis=redis_ok, storage=storage_ok)
+
+
+@app.post("/api/pipelines", response_model=PipelineOut)
+async def create_pipeline(payload: PipelineCreate, db: Session = Depends(get_db)):
+    pipeline = Pipeline(
+        project_id=payload.projectId,
+        page_id=payload.pageId,
+        system_type=payload.systemType,
+        name=payload.name,
+        phase=payload.phase,
+    )
+    db.add(pipeline)
+    db.commit()
+    db.refresh(pipeline)
+    return pipeline
+
+
+@app.get("/api/pages/{page_id}/pipelines", response_model=list[PipelineOut])
+async def list_pipelines(page_id: str, db: Session = Depends(get_db)):
+    return db.query(Pipeline).filter(Pipeline.page_id == page_id).all()
+
+
+@app.post("/api/nodes", response_model=NodeOut)
+async def create_node(payload: NodeCreate, db: Session = Depends(get_db)):
+    node = Node(
+        pipeline_id=payload.pipelineId,
+        node_type=payload.nodeType,
+        x=payload.x,
+        y=payload.y,
+        metadata=payload.metadata,
+    )
+    db.add(node)
+    db.commit()
+    db.refresh(node)
+    return node
+
+
+@app.get("/api/pipelines/{pipeline_id}/nodes", response_model=list[NodeOut])
+async def list_nodes(pipeline_id: str, db: Session = Depends(get_db)):
+    return db.query(Node).filter(Node.pipeline_id == pipeline_id).all()
+
+
+@app.post("/api/segments", response_model=SegmentOut)
+async def create_segment(payload: SegmentCreate, db: Session = Depends(get_db)):
+    segment = Segment(
+        pipeline_id=payload.pipelineId,
+        points=payload.points,
+        diameter=payload.diameter,
+        material=payload.material,
+        slope=payload.slope,
+        depth=payload.depth,
+        phase=payload.phase,
+        tags=payload.tags,
+    )
+    db.add(segment)
+    db.commit()
+    db.refresh(segment)
+    return segment
+
+
+@app.get("/api/pipelines/{pipeline_id}/segments", response_model=list[SegmentOut])
+async def list_segments(pipeline_id: str, db: Session = Depends(get_db)):
+    return db.query(Segment).filter(Segment.pipeline_id == pipeline_id).all()

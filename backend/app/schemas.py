@@ -1,7 +1,16 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from .models import FoundationType, UploadStatus, PageStatus, RealUnit, PageLabel
+from .models import (
+    FoundationType,
+    UploadStatus,
+    PageStatus,
+    RealUnit,
+    PageLabel,
+    PipelineSystem,
+    PipelinePhase,
+    NodeType,
+)
 
 
 class ProjectCreate(BaseModel):
@@ -107,3 +116,72 @@ class HealthOut(BaseModel):
     database: bool
     redis: bool
     storage: bool
+
+
+class PipelineCreate(BaseModel):
+    projectId: str
+    pageId: str
+    systemType: PipelineSystem
+    name: str
+    phase: PipelinePhase
+
+
+class PipelineOut(BaseModel):
+    id: str
+    projectId: str = Field(alias="project_id")
+    pageId: str = Field(alias="page_id")
+    systemType: PipelineSystem = Field(alias="system_type")
+    name: str
+    phase: PipelinePhase
+    createdAt: datetime = Field(alias="created_at")
+
+    class Config:
+        populate_by_name = True
+
+
+class NodeCreate(BaseModel):
+    pipelineId: str
+    nodeType: NodeType
+    x: float
+    y: float
+    metadata: Optional[dict] = None
+
+
+class NodeOut(BaseModel):
+    id: str
+    pipelineId: str = Field(alias="pipeline_id")
+    nodeType: NodeType = Field(alias="node_type")
+    x: float
+    y: float
+    metadata: Optional[dict]
+    createdAt: datetime = Field(alias="created_at")
+
+    class Config:
+        populate_by_name = True
+
+
+class SegmentCreate(BaseModel):
+    pipelineId: str
+    points: List[List[float]]
+    diameter: str
+    material: str
+    slope: Optional[float] = None
+    depth: Optional[float] = None
+    phase: PipelinePhase
+    tags: Optional[dict] = None
+
+
+class SegmentOut(BaseModel):
+    id: str
+    pipelineId: str = Field(alias="pipeline_id")
+    points: List[List[float]]
+    diameter: str
+    material: str
+    slope: Optional[float]
+    depth: Optional[float]
+    phase: PipelinePhase
+    tags: Optional[dict]
+    createdAt: datetime = Field(alias="created_at")
+
+    class Config:
+        populate_by_name = True

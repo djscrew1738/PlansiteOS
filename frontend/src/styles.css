@@ -73,6 +73,10 @@ main {
   max-height: 80vh;
 }
 
+.sidebar h3 {
+  margin-top: 0;
+}
+
 .viewer-panel {
   display: flex;
   flex-direction: column;
