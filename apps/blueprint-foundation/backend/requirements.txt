@@ -1,0 +1,30 @@
+# FastAPI and server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Object storage
+minio==7.2.3
+
+# Redis and job queue
+redis==5.0.1
+rq==1.16.1
+
+# Image processing
+opencv-python-headless==4.9.0.80
+pdf2image==1.17.0
+Pillow==10.2.0
+numpy==1.26.3
+
+# Configuration
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# HEIC support (optional)
+pillow-heif==0.15.0

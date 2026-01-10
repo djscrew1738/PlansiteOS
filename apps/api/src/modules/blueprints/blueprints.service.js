@@ -1,16 +1,15 @@
-const Anthropic = require('@anthropic-ai/sdk');
-const fs = require('fs').promises;
-const path = require('path');
 const logger = require('../../platform/observability/logger');
 const correlationId = require('../../platform/observability/CorrelationId');
 const CircuitBreaker = require('../../platform/middleware/CircuitBreaker');
-const { getTransactionManager } = require('../../platform/config/TransactionManager');
-const db = require('../../platform/config/database');
+const db = require('@pipelineos/db');
+const { AIClient } = require('@pipelineos/ai-core');
+const { blueprintAnalysisSchema } = require('../../schemas/blueprint.schema');
+const blueprintAnalyzerPrompt = require('@pipelineos/ai-core/src/prompts/blueprint_analyzer.prompt');
 
 class BlueprintService {
   constructor() {
-    this.client = null;
-    this.initialized = false;
+    this.aiClient = new AIClient();
+    this.initialized = true;
     this.analysisCount = 0;
     this.successCount = 0;
     this.errorCount = 0;
@@ -23,41 +22,8 @@ class BlueprintService {
       timeout: 120000, // 2 minutes for image analysis
       monitoringPeriod: 300000
     });
-
-    this.transactionManager = getTransactionManager(db);
-
-    this.initialize();
   }
-
-  initialize() {
-    try {
-      if (!process.env.ANTHROPIC_API_KEY) {
-        throw new Error('ANTHROPIC_API_KEY not set');
-      }
-
-      this.client = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      });
-
-      this.initialized = true;
-
-      logger.info('Blueprint Service initialized successfully', {
-        model: 'claude-3-5-sonnet-20241022',
-        visionEnabled: true
-      });
-
-    } catch (error) {
-      this.initialized = false;
-
-      logger.error('Blueprint Service initialization failed', {
-        error: error.message,
-        stack: error.stack
-      });
-
-      throw error;
-    }
-  }
-
+  
   /**
    * Analyze a blueprint image and extract fixture information
    *
@@ -73,26 +39,26 @@ class BlueprintService {
       try {
         this.analysisCount++;
 
-        if (!this.initialized) {
-          throw new BlueprintError('Blueprint Service not initialized', 'NOT_INITIALIZED', corrId);
-        }
-
         logger.info('Starting blueprint analysis', {
           correlationId: corrId,
           filePath: filePath,
           projectName: options.projectName
         });
 
-        // Step 1: Read and encode the image
-        const imageData = await this.readImageFile(filePath);
+        // Step 1: Analyze with Claude Vision
+        const visionAnalysis = await this.circuitBreaker.execute(async () => {
+          return await this.aiClient.analyzeImage(filePath, blueprintAnalyzerPrompt, {
+            provider: 'anthropic',
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 4096
+          });
+        }, { correlationId: corrId });
 
-        // Step 2: Analyze with Claude Vision
-        const visionAnalysis = await this.analyzeWithVision(imageData, corrId);
 
-        // Step 3: Parse and structure the results
+        // Step 2: Parse and structure the results
         const structuredResults = this.parseAnalysisResults(visionAnalysis);
 
-        // Step 4: Validate and enrich data
+        // Step 3: Validate and enrich data
         const enrichedResults = await this.enrichFixtureData(structuredResults);
 
         const duration = Date.now() - startTime;
@@ -356,18 +322,15 @@ Respond ONLY with the JSON object, no additional text.`;
 
       const jsonText = jsonMatch[1] || analysisText;
       const analysis = JSON.parse(jsonText);
+      
+      const validatedAnalysis = blueprintAnalysisSchema.parse(analysis);
 
-      // Validate structure
-      if (!analysis.summary || !analysis.rooms || !analysis.fixtureTotals) {
-        throw new Error('Invalid analysis structure');
-      }
-
-      logger.debug('Analysis results parsed successfully', {
-        totalFixtures: analysis.summary.totalFixtures,
-        totalRooms: analysis.summary.totalRooms
+      logger.debug('Analysis results parsed and validated successfully', {
+        totalFixtures: validatedAnalysis.summary.totalFixtures,
+        totalRooms: validatedAnalysis.summary.totalRooms
       });
 
-      return analysis;
+      return validatedAnalysis;
 
     } catch (error) {
       logger.error('Failed to parse analysis results', {
@@ -391,12 +354,10 @@ Respond ONLY with the JSON object, no additional text.`;
   async enrichFixtureData(analysis) {
     try {
       // Get fixture type reference data
-      const fixtureTypes = await db.query(
-        'SELECT * FROM fixture_types_reference'
-      );
+      const fixtureTypes = await db('fixture_types_reference').select('*');
 
       const fixtureTypeMap = {};
-      fixtureTypes.rows.forEach(row => {
+      fixtureTypes.forEach(row => {
         fixtureTypeMap[row.fixture_type] = row;
       });
 
@@ -451,23 +412,17 @@ Respond ONLY with the JSON object, no additional text.`;
     const corrId = analysisResults.correlationId || correlationId.get();
 
     try {
-      return await this.transactionManager.execute(async (client) => {
+      return await db.transaction(async (trx) => {
         // Update blueprint record
-        await client.query(
-          `UPDATE blueprints
-           SET status = $1,
-               total_fixtures = $2,
-               analysis_data = $3,
-               analysis_completed_at = NOW(),
-               updated_at = NOW()
-           WHERE id = $4`,
-          [
-            'completed',
-            analysisResults.totalFixtures,
-            JSON.stringify(analysisResults),
-            blueprintId
-          ]
-        );
+        await trx('blueprints')
+          .where({ id: blueprintId })
+          .update({
+            status: 'completed',
+            total_fixtures: analysisResults.totalFixtures,
+            analysis_data: JSON.stringify(analysisResults),
+            analysis_completed_at: db.fn.now(),
+            updated_at: db.fn.now()
+          });
 
         logger.debug('Blueprint record updated', {
           correlationId: corrId,
@@ -476,48 +431,36 @@ Respond ONLY with the JSON object, no additional text.`;
 
         // Insert rooms
         for (const room of analysisResults.rooms) {
-          const roomResult = await client.query(
-            `INSERT INTO blueprint_rooms (
-              blueprint_id, room_name, room_type, floor_level,
-              fixture_count, metadata, created_at
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
-            RETURNING id`,
-            [
-              blueprintId,
-              room.name,
-              room.type || 'unknown',
-              room.floor || '1',
-              room.fixtureCount || 0,
-              JSON.stringify(room)
-            ]
-          );
+          const [roomResult] = await trx('blueprint_rooms')
+            .insert({
+              blueprint_id: blueprintId,
+              room_name: room.name,
+              room_type: room.type || 'unknown',
+              floor_level: room.floor || '1',
+              fixture_count: room.fixtureCount || 0,
+              metadata: JSON.stringify(room),
+              created_at: db.fn.now()
+            })
+            .returning('id');
 
-          const roomId = roomResult.rows[0].id;
+          const roomId = roomResult.id;
 
           // Insert fixtures for this room
           for (const fixture of room.fixtures) {
-            await client.query(
-              `INSERT INTO blueprint_fixtures (
-                blueprint_id, fixture_type, location, room_name,
-                quantity, width, depth, measurement_unit,
-                confidence_score, notes, metadata, created_at
-              )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-              [
-                blueprintId,
-                fixture.type,
-                room.name,
-                room.name,
-                fixture.quantity || 1,
-                fixture.width,
-                fixture.depth,
-                fixture.unit || 'inches',
-                fixture.confidence || 85,
-                fixture.notes,
-                JSON.stringify(fixture)
-              ]
-            );
+            await trx('blueprint_fixtures').insert({
+              blueprint_id: blueprintId,
+              fixture_type: fixture.type,
+              location: room.name,
+              room_name: room.name,
+              quantity: fixture.quantity || 1,
+              width: fixture.width,
+              depth: fixture.depth,
+              measurement_unit: fixture.unit || 'inches',
+              confidence_score: fixture.confidence || 85,
+              notes: fixture.notes,
+              metadata: JSON.stringify(fixture),
+              created_at: db.fn.now()
+            });
           }
         }
 
@@ -534,9 +477,7 @@ Respond ONLY with the JSON object, no additional text.`;
           roomsInserted: analysisResults.rooms.length,
           fixturesInserted: analysisResults.totalFixtures
         };
-
-      }, { correlationId: corrId, timeout: 30000 });
-
+      });
     } catch (error) {
       logger.error('Failed to save analysis results', {
         correlationId: corrId,
@@ -562,12 +503,11 @@ Respond ONLY with the JSON object, no additional text.`;
   async getAnalysisResults(blueprintId) {
     try {
       // Get blueprint
-      const blueprintResult = await db.query(
-        'SELECT * FROM blueprints WHERE id = $1',
-        [blueprintId]
-      );
+      const blueprint = await db('blueprints')
+        .where({ id: blueprintId })
+        .first();
 
-      if (blueprintResult.rows.length === 0) {
+      if (!blueprint) {
         throw new BlueprintError(
           'Blueprint not found',
           'NOT_FOUND',
@@ -575,27 +515,16 @@ Respond ONLY with the JSON object, no additional text.`;
         );
       }
 
-      const blueprint = blueprintResult.rows[0];
-
       // Get fixture counts by type
-      const fixtureCounts = await db.query(
-        'SELECT * FROM get_fixture_counts($1)',
-        [blueprintId]
-      );
+      const fixtureCounts = await db.raw('SELECT * FROM get_fixture_counts(?)', [blueprintId]);
 
       // Get fixtures by room
-      const fixturesByRoom = await db.query(
-        'SELECT * FROM get_fixtures_by_room($1)',
-        [blueprintId]
-      );
+      const fixturesByRoom = await db.raw('SELECT * FROM get_fixtures_by_room(?)', [blueprintId]);
 
       // Get all fixtures with details
-      const fixtures = await db.query(
-        `SELECT * FROM blueprint_fixtures
-         WHERE blueprint_id = $1
-         ORDER BY room_name, fixture_type`,
-        [blueprintId]
-      );
+      const fixtures = await db('blueprint_fixtures')
+        .where({ blueprint_id: blueprintId })
+        .orderBy(['room_name', 'fixture_type']);
 
       return {
         blueprint: {
@@ -609,7 +538,7 @@ Respond ONLY with the JSON object, no additional text.`;
         summary: blueprint.analysis_data?.summary || {},
         fixtureCounts: fixtureCounts.rows,
         fixturesByRoom: fixturesByRoom.rows,
-        fixtures: fixtures.rows
+        fixtures: fixtures
       };
 
     } catch (error) {

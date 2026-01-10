@@ -1,0 +1,94 @@
+{
+    # Global options
+    email admin@{$DOMAIN}
+
+    # Enable compression
+    encoding gzip
+
+    # Security
+    servers {
+        protocols h1 h2 h3
+    }
+}
+
+{$DOMAIN} {
+    # Automatic HTTPS via Let's Encrypt
+
+    # Security headers
+    header {
+        # HSTS (2 years)
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+
+        # Clickjacking protection
+        X-Frame-Options "SAMEORIGIN"
+
+        # XSS protection
+        X-XSS-Protection "1; mode=block"
+
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        # Content Security Policy
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self';"
+
+        # Permissions policy
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+        # Remove server header
+        -Server
+    }
+
+    # API routes
+    handle /api/* {
+        # Request body size limit for uploads (100MB)
+        request_body {
+            max_size 100MB
+        }
+
+        reverse_proxy api:8000 {
+            # Health check
+            health_uri /api/health
+            health_interval 30s
+            health_timeout 10s
+
+            # Headers
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Frontend routes (SPA)
+    handle {
+        reverse_proxy frontend:80 {
+            # Headers
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Access logs
+    log {
+        output file /data/access.log
+        format json
+    }
+
+    # Error handling
+    handle_errors {
+        @5xx expression `{http.error.status_code} >= 500 && {http.error.status_code} < 600`
+        handle @5xx {
+            respond "Server error" 500
+        }
+
+        @4xx expression `{http.error.status_code} >= 400 && {http.error.status_code} < 500`
+        handle @4xx {
+            respond "Client error" {http.error.status_code}
+        }
+    }
+}

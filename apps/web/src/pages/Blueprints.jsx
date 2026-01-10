@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Upload, FileText, Search, Filter, Sparkles } from 'lucide-react';
-import BlueprintUpload from '../components/blueprints/BlueprintUpload';
+import BlueprintUpload from '../components/blueprints/BlueprintUpload.improved';
 import { api } from '../api/client';
 import { formatDistanceToNow } from 'date-fns';
 
