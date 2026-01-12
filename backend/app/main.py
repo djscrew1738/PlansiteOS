@@ -302,3 +302,25 @@ async def create_segment(payload: SegmentCreate, db: Session = Depends(get_db)):
 @app.get("/api/pipelines/{pipeline_id}/segments", response_model=list[SegmentOut])
 async def list_segments(pipeline_id: str, db: Session = Depends(get_db)):
     return db.query(Segment).filter(Segment.pipeline_id == pipeline_id).all()
+
+
+@app.delete("/api/segments/{segment_id}")
+async def delete_segment(segment_id: str, db: Session = Depends(get_db)):
+    segment = db.query(Segment).filter(Segment.id == segment_id).one_or_none()
+    if not segment:
+        raise HTTPException(status_code=404, detail="Segment not found")
+    db.delete(segment)
+    db.commit()
+    return {"status": "deleted"}
+
+
+@app.delete("/api/pipelines/{pipeline_id}")
+async def delete_pipeline(pipeline_id: str, db: Session = Depends(get_db)):
+    pipeline = db.query(Pipeline).filter(Pipeline.id == pipeline_id).one_or_none()
+    if not pipeline:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    db.query(Segment).filter(Segment.pipeline_id == pipeline_id).delete()
+    db.query(Node).filter(Node.pipeline_id == pipeline_id).delete()
+    db.delete(pipeline)
+    db.commit()
+    return {"status": "deleted"}

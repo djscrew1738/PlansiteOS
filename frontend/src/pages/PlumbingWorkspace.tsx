@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Image as KonvaImage, Layer, Line, Stage, Text } from 'react-konva';
-import { createPipeline, createSegment, getUpload, listPipelines, listSegments, pageImageUrl } from '../components/api';
+import {
+  createPipeline,
+  createSegment,
+  deletePipeline,
+  deleteSegment,
+  getCalibration,
+  getUpload,
+  listPipelines,
+  listSegments,
+  pageImageUrl,
+} from '../components/api';
 
 const SYSTEMS = [
   { value: 'WATER_COLD', label: 'Water - Cold' },
@@ -34,9 +44,12 @@ export default function PlumbingWorkspace() {
     phase: 'UNDERGROUND',
   });
   const [draftPoints, setDraftPoints] = useState<number[]>([]);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [calibration, setCalibration] = useState<any>(null);
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [stageSize, setStageSize] = useState({ width: 900, height: 600 });
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
     const uploadId = localStorage.getItem('currentUploadId');
@@ -59,6 +72,11 @@ export default function PlumbingWorkspace() {
     img.src = pageImage;
     img.onload = () => setImage(img);
   }, [pageImage]);
+
+  useEffect(() => {
+    if (!activePageId) return;
+    getCalibration(activePageId).then((data) => setCalibration(data));
+  }, [activePageId]);
 
   useEffect(() => {
     if (!activePipeline) return;
@@ -99,7 +117,11 @@ export default function PlumbingWorkspace() {
     const stage = stageRef.current;
     const pointer = stage.getPointerPosition();
     if (!pointer) return;
-    setDraftPoints((prev) => [...prev, pointer.x, pointer.y]);
+    const snapSize = 10;
+    const snapped = snapEnabled
+      ? { x: Math.round(pointer.x / snapSize) * snapSize, y: Math.round(pointer.y / snapSize) * snapSize }
+      : pointer;
+    setDraftPoints((prev) => [...prev, snapped.x, snapped.y]);
   };
 
   const finalizeSegment = async () => {
@@ -120,10 +142,56 @@ export default function PlumbingWorkspace() {
     setDraftPoints([]);
   };
 
+  const clearDraft = () => setDraftPoints([]);
+
+  const zoomTo = (nextScale: number) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    setScale(nextScale);
+    stage.scale({ x: nextScale, y: nextScale });
+  };
+
+  const handleWheel = (e: any) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+    const oldScale = stage.scaleX();
+    const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
+    zoomTo(Math.max(0.2, Math.min(5, newScale)));
+  };
+
+  const deleteActivePipeline = async () => {
+    if (!activePipeline) return;
+    await deletePipeline(activePipeline.id);
+    setPipelines((prev) => prev.filter((pipe) => pipe.id !== activePipeline.id));
+    setActivePipeline(null);
+    setSegments([]);
+  };
+
+  const removeSegment = async (segmentId: string) => {
+    await deleteSegment(segmentId);
+    setSegments((prev) => prev.filter((segment) => segment.id !== segmentId));
+  };
+
   const pipelineOptions = useMemo(
     () => pipelines.map((pipe) => ({ value: pipe.id, label: pipe.name })),
     [pipelines]
   );
+
+  const totalLengthPx = useMemo(() => {
+    const distance = (points: number[][]) => {
+      let total = 0;
+      for (let i = 1; i < points.length; i += 1) {
+        const [x1, y1] = points[i - 1];
+        const [x2, y2] = points[i];
+        total += Math.hypot(x2 - x1, y2 - y1);
+      }
+      return total;
+    };
+    return segments.reduce((sum, seg) => sum + distance(seg.points), 0);
+  }, [segments]);
+
+  const totalLengthReal = calibration ? totalLengthPx / calibration.pixelsPerUnit : null;
 
   return (
     <div className="layout">
@@ -195,6 +263,9 @@ export default function PlumbingWorkspace() {
         <div className="viewer-toolbar card">
           <strong>Plumbing Workspace</strong>
           <span>Pipeline Mode</span>
+          <button className="button" onClick={() => zoomTo(Math.min(5, scale * 1.2))}>Zoom In</button>
+          <button className="button" onClick={() => zoomTo(Math.max(0.2, scale * 0.8))}>Zoom Out</button>
+          <span>Zoom: {(scale * 100).toFixed(0)}%</span>
           <button className="toggle" disabled>Fixture Mode (soon)</button>
           <button className="toggle" disabled>Penetrations (soon)</button>
         </div>
@@ -206,6 +277,7 @@ export default function PlumbingWorkspace() {
             ref={stageRef}
             onClick={handleStageClick}
             onDblClick={finalizeSegment}
+            onWheel={handleWheel}
           >
             <Layer>
               {image && <KonvaImage image={image} />}
@@ -231,6 +303,15 @@ export default function PlumbingWorkspace() {
       <div className="sidebar">
         <h3>Inspector</h3>
         <div className="card">
+          <p>Snap to grid</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={snapEnabled}
+              onChange={(e) => setSnapEnabled(e.target.checked)}
+            />{' '}
+            Enabled (10px)
+          </label>
           <p>Segment diameter</p>
           <select
             className="input"
@@ -266,7 +347,33 @@ export default function PlumbingWorkspace() {
           <button className="button" onClick={finalizeSegment} disabled={draftPoints.length < 4}>
             Save Segment
           </button>
+          <button className="button" onClick={clearDraft} disabled={draftPoints.length === 0}>
+            Clear Draft
+          </button>
           {draftPoints.length > 0 && <p>Click to add points, double click to finish.</p>}
+        </div>
+        <div className="card">
+          <h4>Pipeline Summary</h4>
+          <p>Segments: {segments.length}</p>
+          <p>Length: {totalLengthPx.toFixed(1)} px</p>
+          {totalLengthReal && calibration && (
+            <p>
+              Length: {totalLengthReal.toFixed(2)} {calibration.realUnit.toLowerCase()}
+            </p>
+          )}
+          <button className="button" onClick={deleteActivePipeline} disabled={!activePipeline}>
+            Delete Pipeline
+          </button>
+        </div>
+        <div className="card">
+          <h4>Segments</h4>
+          {segments.length === 0 && <p>No segments yet.</p>}
+          {segments.map((segment) => (
+            <div key={segment.id} style={{ marginBottom: '8px' }}>
+              <p>{segment.diameter} {segment.material} • {segment.phase}</p>
+              <button className="button" onClick={() => removeSegment(segment.id)}>Delete</button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

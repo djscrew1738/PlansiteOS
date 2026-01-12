@@ -88,6 +88,22 @@ export async function listSegments(pipelineId: string) {
   return res.json();
 }
 
+export async function deleteSegment(segmentId: string) {
+  const res = await fetch(`${API_BASE}/api/segments/${segmentId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Segment delete failed');
+  return res.json();
+}
+
+export async function deletePipeline(pipelineId: string) {
+  const res = await fetch(`${API_BASE}/api/pipelines/${pipelineId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Pipeline delete failed');
+  return res.json();
+}
+
 export function pageImageUrl(pageId: string) {
   return `${API_BASE}/api/pages/${pageId}/image`;
 }
