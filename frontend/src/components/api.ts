@@ -104,6 +104,54 @@ export async function deletePipeline(pipelineId: string) {
   return res.json();
 }
 
+export async function createPricingItem(payload: any) {
+  const res = await fetch(`${API_BASE}/api/pricing/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Pricing item create failed');
+  return res.json();
+}
+
+export async function listPricingItems(projectId: string) {
+  const res = await fetch(`${API_BASE}/api/pricing/items/${projectId}`);
+  if (!res.ok) throw new Error('Pricing items list failed');
+  return res.json();
+}
+
+export async function addPricingHistory(payload: any) {
+  const res = await fetch(`${API_BASE}/api/pricing/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Pricing history create failed');
+  return res.json();
+}
+
+export async function listPricingHistory(itemId: string) {
+  const res = await fetch(`${API_BASE}/api/pricing/history/${itemId}`);
+  if (!res.ok) throw new Error('Pricing history list failed');
+  return res.json();
+}
+
+export async function setQuickBooksConfig(payload: any) {
+  const res = await fetch(`${API_BASE}/api/integrations/quickbooks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('QuickBooks config save failed');
+  return res.json();
+}
+
+export async function getQuickBooksConfig(projectId: string) {
+  const res = await fetch(`${API_BASE}/api/integrations/quickbooks/${projectId}`);
+  if (!res.ok) throw new Error('QuickBooks config fetch failed');
+  return res.json();
+}
+
 export function pageImageUrl(pageId: string) {
   return `${API_BASE}/api/pages/${pageId}/image`;
 }

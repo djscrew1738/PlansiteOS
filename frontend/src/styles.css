@@ -111,6 +111,21 @@ main {
   min-height: 65vh;
 }
 
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-height: none;
+  }
+
+  .viewer {
+    min-height: 50vh;
+  }
+}
+
 .thumb {
   width: 100%;
   margin-bottom: 8px;

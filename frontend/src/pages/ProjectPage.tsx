@@ -29,6 +29,17 @@ export default function ProjectPage() {
   return (
     <div className="card">
       <h2>Upload Blueprint</h2>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        <button className="button" onClick={() => projectId && navigate(`/projects/${projectId}/pricing`)}>
+          Pricing History
+        </button>
+        <button className="button" onClick={() => projectId && navigate(`/projects/${projectId}/quickbooks`)}>
+          QuickBooks
+        </button>
+        <button className="button" onClick={() => projectId && navigate(`/workspaces/${projectId}/plumbing`)}>
+          Plumbing Workspace
+        </button>
+      </div>
       <div
         className="upload-drop"
         onDragOver={(e) => e.preventDefault()}

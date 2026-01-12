@@ -185,3 +185,56 @@ class SegmentOut(BaseModel):
 
     class Config:
         populate_by_name = True
+
+
+class PricingItemCreate(BaseModel):
+    projectId: str
+    name: str
+    unit: str
+
+
+class PricingItemOut(BaseModel):
+    id: str
+    projectId: str = Field(alias="project_id")
+    name: str
+    unit: str
+    createdAt: datetime = Field(alias="created_at")
+
+    class Config:
+        populate_by_name = True
+
+
+class PricingHistoryCreate(BaseModel):
+    itemId: str
+    price: float
+    source: Optional[str] = None
+
+
+class PricingHistoryOut(BaseModel):
+    id: str
+    itemId: str = Field(alias="item_id")
+    price: float
+    source: Optional[str]
+    effectiveDate: datetime = Field(alias="effective_date")
+
+    class Config:
+        populate_by_name = True
+
+
+class QuickBooksConfigCreate(BaseModel):
+    projectId: str
+    companyId: str
+    accessToken: Optional[str] = None
+    refreshToken: Optional[str] = None
+    status: str = "DISCONNECTED"
+
+
+class QuickBooksConfigOut(BaseModel):
+    id: str
+    projectId: str = Field(alias="project_id")
+    companyId: str = Field(alias="company_id")
+    status: str
+    createdAt: datetime = Field(alias="created_at")
+
+    class Config:
+        populate_by_name = True

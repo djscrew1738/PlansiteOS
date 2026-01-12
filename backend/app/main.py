@@ -10,7 +10,19 @@ from rq import Queue
 from .config import settings
 from .db import get_db
 from .jobs import process_upload
-from .models import Calibration, Page, Project, Upload, UploadStatus, Pipeline, Node, Segment
+from .models import (
+    Calibration,
+    Page,
+    Project,
+    Upload,
+    UploadStatus,
+    Pipeline,
+    Node,
+    Segment,
+    PricingItem,
+    PricingHistory,
+    QuickBooksIntegration,
+)
 from .rate_limit import UploadRateLimitMiddleware
 from .schemas import (
     CalibrationIn,
@@ -24,6 +36,12 @@ from .schemas import (
     NodeOut,
     SegmentCreate,
     SegmentOut,
+    PricingItemCreate,
+    PricingItemOut,
+    PricingHistoryCreate,
+    PricingHistoryOut,
+    QuickBooksConfigCreate,
+    QuickBooksConfigOut,
     ProjectCreate,
     ProjectOut,
     UploadCreateResponse,
@@ -330,3 +348,51 @@ async def delete_pipeline(pipeline_id: str, db: Session = Depends(get_db)):
     db.delete(pipeline)
     db.commit()
     return {"status": "deleted"}
+
+
+@app.post("/api/pricing/items", response_model=PricingItemOut)
+async def create_pricing_item(payload: PricingItemCreate, db: Session = Depends(get_db)):
+    item = PricingItem(project_id=payload.projectId, name=payload.name, unit=payload.unit)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.get("/api/pricing/items/{project_id}", response_model=list[PricingItemOut])
+async def list_pricing_items(project_id: str, db: Session = Depends(get_db)):
+    return db.query(PricingItem).filter(PricingItem.project_id == project_id).all()
+
+
+@app.post("/api/pricing/history", response_model=PricingHistoryOut)
+async def add_pricing_history(payload: PricingHistoryCreate, db: Session = Depends(get_db)):
+    history = PricingHistory(item_id=payload.itemId, price=payload.price, source=payload.source)
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+    return history
+
+
+@app.get("/api/pricing/history/{item_id}", response_model=list[PricingHistoryOut])
+async def list_pricing_history(item_id: str, db: Session = Depends(get_db)):
+    return db.query(PricingHistory).filter(PricingHistory.item_id == item_id).all()
+
+
+@app.post("/api/integrations/quickbooks", response_model=QuickBooksConfigOut)
+async def set_quickbooks_config(payload: QuickBooksConfigCreate, db: Session = Depends(get_db)):
+    integration = QuickBooksIntegration(
+        project_id=payload.projectId,
+        company_id=payload.companyId,
+        access_token=payload.accessToken,
+        refresh_token=payload.refreshToken,
+        status=payload.status,
+    )
+    db.add(integration)
+    db.commit()
+    db.refresh(integration)
+    return integration
+
+
+@app.get("/api/integrations/quickbooks/{project_id}", response_model=QuickBooksConfigOut | None)
+async def get_quickbooks_config(project_id: str, db: Session = Depends(get_db)):
+    return db.query(QuickBooksIntegration).filter(QuickBooksIntegration.project_id == project_id).one_or_none()

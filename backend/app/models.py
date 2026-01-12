@@ -179,3 +179,39 @@ class Segment(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     pipeline = relationship("Pipeline", back_populates="segments")
+
+
+class PricingItem(Base):
+    __tablename__ = "pricing_items"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    name = Column(String, nullable=False)
+    unit = Column(String, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    history = relationship("PricingHistory", back_populates="item")
+
+
+class PricingHistory(Base):
+    __tablename__ = "pricing_history"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("pricing_items.id"), nullable=False)
+    price = Column(Float, nullable=False)
+    source = Column(String, nullable=True)
+    effective_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    item = relationship("PricingItem", back_populates="history")
+
+
+class QuickBooksIntegration(Base):
+    __tablename__ = "quickbooks_integrations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
+    company_id = Column(String, nullable=False)
+    access_token = Column(String, nullable=True)
+    refresh_token = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="DISCONNECTED")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

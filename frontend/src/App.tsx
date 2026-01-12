@@ -4,6 +4,8 @@ import ProjectPage from './pages/ProjectPage';
 import UploadPage from './pages/UploadPage';
 import PageViewer from './pages/PageViewer';
 import PlumbingWorkspace from './pages/PlumbingWorkspace';
+import PricingHistoryPage from './pages/PricingHistoryPage';
+import QuickBooksPage from './pages/QuickBooksPage';
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
           <Route path="/uploads/:uploadId" element={<UploadPage />} />
           <Route path="/pages/:pageId" element={<PageViewer />} />
           <Route path="/workspaces/:projectId/plumbing" element={<PlumbingWorkspace />} />
+          <Route path="/projects/:projectId/pricing" element={<PricingHistoryPage />} />
+          <Route path="/projects/:projectId/quickbooks" element={<QuickBooksPage />} />
         </Routes>
       </main>
     </div>
