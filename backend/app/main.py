@@ -99,6 +99,9 @@ async def upload_blueprint(
     revisionLabel: str | None = Form(default=None),
     db: Session = Depends(get_db),
 ):
+    project = db.query(Project).filter(Project.id == project_id).one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(status_code=400, detail="Unsupported file type")
 
@@ -199,6 +202,8 @@ async def set_calibration(page_id: str, payload: CalibrationIn, db: Session = De
     page = db.query(Page).filter(Page.id == page_id).one_or_none()
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
+    if payload.realDistance <= 0:
+        raise HTTPException(status_code=400, detail="realDistance must be greater than zero")
 
     pixels = ((payload.p2x - payload.p1x) ** 2 + (payload.p2y - payload.p1y) ** 2) ** 0.5
     pixels_per_unit = pixels / payload.realDistance
@@ -267,6 +272,9 @@ async def vision_stack():
 
 @app.post("/api/pipelines", response_model=PipelineOut)
 async def create_pipeline(payload: PipelineCreate, db: Session = Depends(get_db)):
+    page = db.query(Page).filter(Page.id == payload.pageId).one_or_none()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found")
     pipeline = Pipeline(
         project_id=payload.projectId,
         page_id=payload.pageId,
@@ -287,6 +295,9 @@ async def list_pipelines(page_id: str, db: Session = Depends(get_db)):
 
 @app.post("/api/nodes", response_model=NodeOut)
 async def create_node(payload: NodeCreate, db: Session = Depends(get_db)):
+    pipeline = db.query(Pipeline).filter(Pipeline.id == payload.pipelineId).one_or_none()
+    if not pipeline:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
     node = Node(
         pipeline_id=payload.pipelineId,
         node_type=payload.nodeType,
@@ -307,6 +318,11 @@ async def list_nodes(pipeline_id: str, db: Session = Depends(get_db)):
 
 @app.post("/api/segments", response_model=SegmentOut)
 async def create_segment(payload: SegmentCreate, db: Session = Depends(get_db)):
+    pipeline = db.query(Pipeline).filter(Pipeline.id == payload.pipelineId).one_or_none()
+    if not pipeline:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    if len(payload.points) < 2:
+        raise HTTPException(status_code=400, detail="Segment requires at least two points")
     segment = Segment(
         pipeline_id=payload.pipelineId,
         points=payload.points,
