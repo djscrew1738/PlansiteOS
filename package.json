@@ -1,35 +1,46 @@
 {
-  "name": "pipelineos",
-  "version": "1.0.0",
-  "description": "PipelineOS - Lead Management & Blueprint Analysis",
-  "main": "src/app.js",
-  "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "test": "jest",
-    "test:blueprint": "node test-blueprint-analysis.js",
-    "test:improvements": "node test-improvements.js",
-    "migrate": "psql $DATABASE_URL < migrations/add_transaction_support.sql && psql $DATABASE_URL < migrations/add_blueprint_analysis.sql"
-  },
-  "keywords": ["plumbing", "crm", "ai", "blueprint"],
-  "author": "",
+  "name": "plansiteos",
+  "version": "2.0.0",
+  "description": "AI-powered blueprint takeoff and estimation platform for plumbing contractors",
+  "author": "CTL Plumbing LLC",
   "license": "MIT",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.9.1",
-    "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1",
-    "canvas": "^2.11.2",
-    "uuid": "^9.0.1",
-    "pg": "^8.11.3",
-    "winston": "^3.11.0",
-    "node-cron": "^3.0.3",
-    "twilio": "^4.19.0",
-    "form-data": "^4.0.0",
-    "dotenv": "^16.3.1"
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/djscrew1738/PlansiteOS.git"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules",
+    "setup": "./scripts/setup.sh"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "supertest": "^6.3.3",
-    "nodemon": "^3.0.2"
-  }
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "plumbing",
+    "construction",
+    "blueprint",
+    "ai",
+    "estimation",
+    "takeoff",
+    "dfw",
+    "texas"
+  ]
 }
