@@ -153,7 +153,7 @@ class NodeOut(BaseModel):
     nodeType: NodeType = Field(alias="node_type")
     x: float
     y: float
-    metadata: Optional[dict]
+    metadata: Optional[dict] = Field(alias="metadata_json")
     createdAt: datetime = Field(alias="created_at")
 
     class Config:

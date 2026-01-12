@@ -292,7 +292,7 @@ async def create_node(payload: NodeCreate, db: Session = Depends(get_db)):
         node_type=payload.nodeType,
         x=payload.x,
         y=payload.y,
-        metadata=payload.metadata,
+        metadata_json=payload.metadata,
     )
     db.add(node)
     db.commit()

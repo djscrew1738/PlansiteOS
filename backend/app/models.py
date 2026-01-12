@@ -158,7 +158,7 @@ class Node(Base):
     node_type = Column(Enum(NodeType), nullable=False)
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     pipeline = relationship("Pipeline", back_populates="nodes")
