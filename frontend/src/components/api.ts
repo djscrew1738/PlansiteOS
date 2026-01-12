@@ -72,6 +72,22 @@ export async function listPipelines(pageId: string) {
   return res.json();
 }
 
+export async function createSegment(payload: any) {
+  const res = await fetch(`${API_BASE}/api/segments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Segment create failed');
+  return res.json();
+}
+
+export async function listSegments(pipelineId: string) {
+  const res = await fetch(`${API_BASE}/api/pipelines/${pipelineId}/segments`);
+  if (!res.ok) throw new Error('Segment list failed');
+  return res.json();
+}
+
 export function pageImageUrl(pageId: string) {
   return `${API_BASE}/api/pages/${pageId}/image`;
 }
