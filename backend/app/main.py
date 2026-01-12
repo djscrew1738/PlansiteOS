@@ -30,6 +30,7 @@ from .schemas import (
     UploadOut,
 )
 from .storage import storage_client
+from .vision_stack import get_vision_stack
 
 ALLOWED_MIME_TYPES = {
     "application/pdf",
@@ -239,6 +240,11 @@ async def healthcheck(db: Session = Depends(get_db)):
         storage_ok = False
 
     return HealthOut(database=db_ok, redis=redis_ok, storage=storage_ok)
+
+
+@app.get("/api/vision-stack")
+async def vision_stack():
+    return [tool.__dict__ for tool in get_vision_stack()]
 
 
 @app.post("/api/pipelines", response_model=PipelineOut)
