@@ -1,9 +1,5 @@
 # PlansiteOS v2.0
 
-**AI-powered blueprint takeoff and estimation platform for plumbing contractors**
-
-Built for CTL Plumbing LLC - DFW Metro Area, Texas
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 
