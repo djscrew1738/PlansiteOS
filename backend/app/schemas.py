@@ -77,7 +77,7 @@ class UploadCreateResponse(BaseModel):
 
 
 class PageSelection(BaseModel):
-    activePageNumbers: List[int]
+    activePageNumbers: List[int] = Field(min_length=1)
     labels: Optional[dict] = None
     revisionLabel: Optional[str] = None
 
@@ -92,7 +92,7 @@ class CalibrationIn(BaseModel):
     p1y: int
     p2x: int
     p2y: int
-    realDistance: float
+    realDistance: float = Field(gt=0)
     realUnit: RealUnit
 
 
@@ -162,7 +162,7 @@ class NodeOut(BaseModel):
 
 class SegmentCreate(BaseModel):
     pipelineId: str
-    points: List[List[float]]
+    points: List[List[float]] = Field(min_length=2)
     diameter: str
     material: str
     slope: Optional[float] = None

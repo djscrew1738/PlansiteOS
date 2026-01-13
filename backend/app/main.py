@@ -154,6 +154,8 @@ async def select_pages(upload_id: str, payload: PageSelection, db: Session = Dep
         raise HTTPException(status_code=404, detail="Upload not found")
     if upload.mime_type != "application/pdf":
         return {"status": "ignored"}
+    if any(page_number < 1 for page_number in payload.activePageNumbers):
+        raise HTTPException(status_code=400, detail="Page numbers must be positive")
     progress = upload.progress or {}
     progress["selectedPages"] = payload.activePageNumbers
     if payload.labels:
