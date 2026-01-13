@@ -15,6 +15,7 @@ function App() {
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="blueprints" element={<Blueprints />} />
+        <Route path="takeoff" element={<Blueprints />} />
         <Route path="blueprints/:id" element={<BlueprintDetail />} />
         <Route path="leads" element={<Leads />} />
         <Route path="bids" element={<Bids />} />
