@@ -9,12 +9,10 @@ import {
   Menu,
   X,
   ChevronDown,
-  LogOut,
   UserCircle,
   HardHat, // New icon for trade-specific context
 } from 'lucide-react';
-import { useState, Fragment } from 'react';
-import { Transition, Menu as HeadlessMenu } from '@headlessui/react'; // Using Headless UI for accessible dropdowns
+import { useState } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -127,74 +125,18 @@ export default function DashboardLayout() {
               <h1 className="text-2xl font-bold text-text-primary">{currentPage}</h1>
             </div>
             <div className="ml-4 flex items-center lg:ml-6">
-              {/* Profile dropdown */}
-              <HeadlessMenu as="div" className="ml-3 relative">
-                <div>
-                  <HeadlessMenu.Button className="max-w-xs bg-surface flex items-center text-sm rounded-full border border-border/80 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:ring-offset-0 lg:p-2 lg:rounded-xl lg:hover:bg-surface-hover">
-                    <span className="hidden ml-3 text-text-secondary text-sm font-medium lg:block">
-                      <span className="sr-only">Open user menu for </span>CTL Plumbing
-                    </span>
-                    <ChevronDown
-                      className="hidden flex-shrink-0 ml-1 h-5 w-5 text-text-tertiary lg:block"
-                      aria-hidden="true"
-                    />
-                  </HeadlessMenu.Button>
-                </div>
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <HeadlessMenu.Items className="origin-top-right absolute right-0 mt-2 w-52 rounded-xl shadow-card py-2 bg-surface border border-border/80 focus:outline-none">
-                    <HeadlessMenu.Item>
-                      {({ active }) => (
-                        <Link
-                          to="/profile"
-                          className={classNames(
-                            active ? 'bg-surface-hover' : '',
-                            'block px-4 py-2 text-sm text-text-secondary'
-                          )}
-                        >
-                          <UserCircle className="inline-block w-4 h-4 mr-2 text-text-tertiary" />
-                          Your Profile
-                        </Link>
-                      )}
-                    </HeadlessMenu.Item>
-                    <HeadlessMenu.Item>
-                      {({ active }) => (
-                        <Link
-                          to="/settings"
-                          className={classNames(
-                            active ? 'bg-surface-hover' : '',
-                            'block px-4 py-2 text-sm text-text-secondary'
-                          )}
-                        >
-                          <Settings className="inline-block w-4 h-4 mr-2 text-text-tertiary" />
-                          Settings
-                        </Link>
-                      )}
-                    </HeadlessMenu.Item>
-                    <HeadlessMenu.Item>
-                      {({ active }) => (
-                        <Link
-                          to="/signout"
-                          className={classNames(
-                            active ? 'bg-surface-hover' : '',
-                            'block px-4 py-2 text-sm text-text-secondary'
-                          )}
-                        >
-                          <LogOut className="inline-block w-4 h-4 mr-2 text-text-tertiary" />
-                          Sign out
-                        </Link>
-                      )}
-                    </HeadlessMenu.Item>
-                  </HeadlessMenu.Items>
-                </Transition>
-              </HeadlessMenu>
+              <button
+                type="button"
+                className="max-w-xs bg-surface flex items-center text-sm rounded-full border border-border/80 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:ring-offset-0 lg:p-2 lg:rounded-xl lg:hover:bg-surface-hover"
+              >
+                <span className="hidden ml-3 text-text-secondary text-sm font-medium lg:block">
+                  <span className="sr-only">User profile</span>CTL Plumbing
+                </span>
+                <ChevronDown
+                  className="hidden flex-shrink-0 ml-1 h-5 w-5 text-text-tertiary lg:block"
+                  aria-hidden="true"
+                />
+              </button>
             </div>
           </div>
         </div>
