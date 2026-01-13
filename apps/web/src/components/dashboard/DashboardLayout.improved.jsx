@@ -6,6 +6,7 @@ import {
   FileCheck,
   BarChart3,
   Settings,
+  Sparkles,
   Menu,
   X,
   ChevronDown,
@@ -17,6 +18,7 @@ import { useState } from 'react';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Blueprints', href: '/blueprints', icon: FileText },
+  { name: 'Takeoff', href: '/takeoff', icon: Sparkles },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Bids', href: '/bids', icon: FileCheck },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },

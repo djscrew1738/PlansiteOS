@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileText, MapPin, Calendar, Download, AlertTriangle, Scale, Ruler, Layers, Settings2, Eye, EyeOff } from 'lucide-react';
+import { FileText, MapPin, Calendar, Download, AlertTriangle, Scale, Ruler, Layers, Settings2, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api/client';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useState } from 'react';
@@ -115,13 +115,13 @@ export default function BlueprintDetail() {
       {/* Header */}
       <div className="card-gradient flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <Link
-            to="/blueprints"
-            className="inline-flex items-center text-text-tertiary hover:text-primary-300 transition-colors mb-2 text-sm font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Blueprints
-          </Link>
+          <nav className="flex items-center gap-2 text-sm text-text-tertiary mb-2">
+            <Link to="/blueprints" className="hover:text-primary-300 transition-colors">
+              Blueprints
+            </Link>
+            <span>/</span>
+            <span className="text-text-secondary">{blueprint.project_name}</span>
+          </nav>
           <h1 className="text-4xl font-extrabold text-text-primary tracking-tight">
             {blueprint.project_name}
           </h1>

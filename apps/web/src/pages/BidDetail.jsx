@@ -123,7 +123,14 @@ export default function BidDetail() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <div className="flex items-center space-x-3">
+            <nav className="text-sm text-gray-500">
+              <Link to="/bids" className="hover:text-gray-700">
+                Bids
+              </Link>
+              <span className="mx-2">/</span>
+              <span className="text-gray-700">{bid.bidNumber}</span>
+            </nav>
+            <div className="flex items-center space-x-3 mt-1">
               <h1 className="text-2xl font-bold text-gray-900">{bid.bidNumber}</h1>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(bid.status)}`}>
                 {bid.status.replace('_', ' ')}
