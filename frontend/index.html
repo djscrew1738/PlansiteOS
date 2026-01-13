@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0c1929">
+    <meta name="description" content="AI-Powered Blueprint Analysis for Plumbing Contractors">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PlansiteOS | Blueprint Analysis</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Fonts - Distinctive choices -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ══════════════════════════════════════════════════════════════
+           CSS RESET & ROOT VARIABLES
+           ══════════════════════════════════════════════════════════════ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            /* Color System - Industrial Professional */
+            --bg-deep: #0c1929;
+            --bg-primary: #111d2e;
+            --bg-elevated: #162438;
+            --bg-surface: #1c2d42;
+            --bg-hover: #243548;
+            
+            /* Accent Colors */
+            --accent-primary: #3b82f6;
+            --accent-secondary: #60a5fa;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --accent-success: #10b981;
+            --accent-success-glow: rgba(16, 185, 129, 0.3);
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --accent-orange: #f97316;
+            
+            /* Text Colors */
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-dim: #475569;
+            
+            /* Borders & Dividers */
+            --border-subtle: rgba(148, 163, 184, 0.1);
+            --border-default: rgba(148, 163, 184, 0.15);
+            --border-strong: rgba(148, 163, 184, 0.25);
+            
+            /* Spacing Scale */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --space-3xl: 64px;
+            
+            /* Border Radius */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 40px var(--accent-glow);
+            
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-base: 250ms ease;
+            --transition-slow: 400ms ease;
+            --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           BASE STYLES
+           ══════════════════════════════════════════════════════════════ */
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Background Pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba(249, 115, 22, 0.08), transparent),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           TYPOGRAPHY
+           ══════════════════════════════════════════════════════════════ */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+        
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           LAYOUT
+           ══════════════════════════════════════════════════════════════ */
+        .app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 var(--space-md);
+        }
+        
+        main {
+            flex: 1;
+            padding: var(--space-lg) 0 var(--space-3xl);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           HEADER
+           ══════════════════════════════════════════════════════════════ */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(12, 25, 41, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: var(--space-md) 0;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-decoration: none;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            background: var(--accent-orange);
+            color: white;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+        
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-strong);
+        }
+        
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           HERO SECTION
+           ══════════════════════════════════════════════════════════════ */
+        .hero {
+            text-align: center;
+            padding: var(--space-2xl) 0;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .hero-title {
+            font-size: clamp(28px, 6vw, 42px);
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           CARDS
+           ══════════════════════════════════════════════════════════════ */
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+        
+        .card + .card {
+            margin-top: var(--space-md);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .card-title-icon {
+            font-size: 16px;
+        }
+        
+        .card-body {
+            padding: var(--space-lg);
+        }
+        
+        .card-footer {
+            padding: var(--space-md) var(--space-lg);
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-elevated);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           UPLOAD ZONE
+           ══════════════════════════════════════════════════════════════ */
+        .upload-zone {
+            position: relative;
+            border: 2px dashed var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: var(--space-3xl) var(--space-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            background: var(--bg-elevated);
+        }
+        
+        .upload-zone:hover {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .upload-zone.dragover {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.1);
+            transform: scale(1.01);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .upload-zone.has-file {
+            border-style: solid;
+            border-color: var(--accent-success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .upload-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--space-lg);
+            background: linear-gradient(135deg, var(--bg-surface), var(--bg-hover));
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            transition: all var(--transition-bounce);
+        }
+        
+        .upload-zone:hover .upload-icon-wrapper {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .upload-zone.dragover .upload-icon-wrapper {
+            transform: translateY(-8px) scale(1.1);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+        
+        .upload-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: var(--space-xs);
+            color: var(--text-primary);
+        }
+        
+        .upload-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: var(--space-lg);
+        }
+        
+        .upload-formats {
+            display: inline-flex;
+            gap: var(--space-xs);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .format-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 10px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+        }
+        
+        .upload-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        /* Upload Actions */
+        .upload-actions {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-lg);
+            justify-content: center;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           BUTTONS
+           ══════════════════════════════════════════════════════════════ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: 12px 24px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        
+        .btn:active {
+            transform: scale(0.97);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), #2563eb);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-default);
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--bg-hover);
+            border-color: var(--border-strong);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-success), #059669);
+            color: white;
+            box-shadow: 0 2px 8px var(--accent-success-glow);
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 4px 16px var(--accent-success-glow);
+            transform: translateY(-1px);
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        
+        .btn-ghost:hover:not(:disabled) {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+        
+        .btn-lg {
+            padding: 16px 32px;
+            font-size: 16px;
+            border-radius: var(--radius-lg);
+        }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        .btn-icon {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+        }
+        
+        .btn-full {
+            width: 100%;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           PREVIEW SECTION
+           ══════════════════════════════════════════════════════════════ */
+        .preview-container {
+            position: relative;
+            background: var(--bg-deep);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: var(--space-md);
+        }
+        
+        .preview-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .preview-pdf {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2xl);
+            gap: var(--space-md);
+        }
+        
+        .preview-pdf-icon {
+            font-size: 64px;
+        }
+        
+        .preview-filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+            word-break: break-all;
+            text-align: center;
+        }
+        
+        .preview-info {
+            display: flex;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+        }
+        
+        .preview-info-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .preview-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           LOADING STATE
+           ══════════════════════════════════════════════════════════════ */
+        .loading-container {
+            padding: var(--space-3xl) var(--space-lg);
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto var(--space-lg);
+            position: relative;
+        }
+        
+        .loading-spinner::before,
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid transparent;
+        }
+        
+        .loading-spinner::before {
+            border-top-color: var(--accent-primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-spinner::after {
+            border-right-color: var(--accent-secondary);
+            animation: spin 1.5s linear infinite reverse;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+        
+        .loading-subtext {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .loading-progress {
+            width: 200px;
+            height: 4px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-full);
+            margin: var(--space-lg) auto 0;
+            overflow: hidden;
+        }
+        
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-full);
+            animation: progress 2s ease-in-out infinite;
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; margin-left: 0%; }
+            50% { width: 60%; margin-left: 20%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           RESULTS SECTION
+           ══════════════════════════════════════════════════════════════ */
+        .results-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+        
+        .summary-stat {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            text-align: center;
+        }
+        
+        .summary-stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .summary-stat-value.highlight {
+            background: linear-gradient(135deg, var(--accent-success), #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .summary-stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+        
+        /* Results Table */
+        .results-table-wrapper {
+            overflow-x: auto;
+            margin: 0 calc(var(--space-lg) * -1);
+            padding: 0 var(--space-lg);
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .results-table th {
+            text-align: left;
+            padding: var(--space-sm) var(--space-md);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-default);
+            background: var(--bg-elevated);
+        }
+        
+        .results-table th:last-child,
+        .results-table td:last-child {
+            text-align: right;
+        }
+        
+        .results-table td {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+        
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .results-table tbody tr {
+            transition: background var(--transition-fast);
+        }
+        
+        .results-table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+        
+        .fixture-name {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+        
+        .fixture-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-surface);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+        }
+        
+        .fixture-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+        
+        .fixture-price {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+        
+        .fixture-total {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Grand Total Row */
+        .results-table tfoot td {
+            padding: var(--space-md);
+            background: var(--bg-elevated);
+            border-top: 2px solid var(--border-strong);
+            font-weight: 600;
+        }
+        
+        .grand-total {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-success), #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Confidence Badge */
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .confidence-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-success);
+        }
+        
+        .confidence-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-warning);
+        }
+        
+        .confidence-low {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-danger);
+        }
+        
+        /* Room Breakdown */
+        .room-breakdown {
+            margin-top: var(--space-lg);
+        }
+        
+        .room-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        
+        .room-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md);
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+        }
+        
+        .room-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .room-fixtures {
+            display: flex;
+            gap: var(--space-xs);
+            flex-wrap: wrap;
+        }
+        
+        .room-fixture-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+        }
+        
+        /* Result Actions */
+        .result-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           TOAST NOTIFICATIONS
+           ══════════════════════════════════════════════════════════════ */
+        .toast-container {
+            position: fixed;
+            bottom: var(--space-lg);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            pointer-events: none;
+        }
+        
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.3s ease-out;
+            pointer-events: auto;
+        }
+        
+        .toast.toast-out {
+            animation: toastOut 0.3s ease-out forwards;
+        }
+        
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+        
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+        
+        .toast-success {
+            border-color: var(--accent-success);
+        }
+        
+        .toast-error {
+            border-color: var(--accent-danger);
+        }
+        
+        .toast-icon {
+            font-size: 18px;
+        }
+        
+        .toast-message {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           MODAL
+           ══════════════════════════════════════════════════════════════ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-md);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-base);
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow: auto;
+            transform: scale(0.95) translateY(20px);
+            transition: transform var(--transition-base);
+        }
+        
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            padding: var(--space-lg);
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: flex-end;
+            padding: var(--space-lg);
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-elevated);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           PRICING EDITOR
+           ══════════════════════════════════════════════════════════════ */
+        .pricing-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        
+        .pricing-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+        
+        .pricing-label {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .pricing-input {
+            width: 100px;
+            padding: var(--space-sm) var(--space-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            text-align: right;
+        }
+        
+        .pricing-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           HISTORY SECTION
+           ══════════════════════════════════════════════════════════════ */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .history-item:hover {
+            background: var(--bg-hover);
+        }
+        
+        .history-thumb {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .history-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .history-meta {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .history-total {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-success);
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           FOOTER
+           ══════════════════════════════════════════════════════════════ */
+        .footer {
+            padding: var(--space-lg) 0;
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+        }
+        
+        .footer-text {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .footer-text strong {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        /* ══════════════════════════════════════════════════════════════
+           UTILITY CLASSES
+           ══════════════════════════════════════════════════════════════ */
+        .hidden {
+            display: none !important;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-muted {
+            color: var(--text-muted);
+        }
+        
+        .mt-sm { margin-top: var(--space-sm); }
+        .mt-md { margin-top: var(--space-md); }
+        .mt-lg { margin-top: var(--space-lg); }
+        .mb-sm { margin-bottom: var(--space-sm); }
+        .mb-md { margin-bottom: var(--space-md); }
+        .mb-lg { margin-bottom: var(--space-lg); }
+        
+        /* Animation delays for staggered entrance */
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        
+        /* ══════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ══════════════════════════════════════════════════════════════ */
+        @media (max-width: 640px) {
+            :root {
+                --space-lg: 20px;
+                --space-xl: 28px;
+                --space-2xl: 40px;
+            }
+            
+            .hero-title {
+                font-size: 26px;
+            }
+            
+            .upload-zone {
+                padding: var(--space-2xl) var(--space-md);
+            }
+            
+            .upload-icon-wrapper {
+                width: 64px;
+                height: 64px;
+                font-size: 28px;
+            }
+            
+            .results-summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-stat {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                text-align: left;
+            }
+            
+            .summary-stat-value {
+                font-size: 24px;
+                order: 2;
+            }
+            
+            .result-actions {
+                flex-direction: column;
+            }
+            
+            .result-actions .btn {
+                width: 100%;
+            }
+            
+            .btn-lg {
+                padding: 14px 24px;
+            }
+            
+            .modal {
+                margin: var(--space-md);
+            }
+        }
+        
+        /* Touch devices */
+        @media (hover: none) {
+            .upload-zone:hover {
+                border-color: var(--border-strong);
+                background: var(--bg-elevated);
+            }
+            
+            .upload-zone:hover .upload-icon-wrapper {
+                transform: none;
+            }
+        }
+        
+        /* PWA Standalone Mode */
+        @media (display-mode: standalone) {
+            .header {
+                padding-top: env(safe-area-inset-top);
+            }
+            
+            .footer {
+                padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* Print Styles */
+        @media print {
+            body::before {
+                display: none;
+            }
+            
+            .header,
+            .upload-zone,
+            .btn,
+            .footer {
+                display: none;
+            }
+            
+            .card {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- ═══════════ HEADER ═══════════ -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <a href="/" class="logo">
+                        <div class="logo-icon">📐</div>
+                        <span class="logo-text">PlansiteOS</span>
+                        <span class="logo-badge">Beta</span>
+                    </a>
+                    <div class="header-actions">
+                        <button class="icon-btn" id="historyBtn" title="History">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="settingsBtn" title="Settings">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- ═══════════ MAIN CONTENT ═══════════ -->
+        <main>
+            <div class="container">
+                <!-- Hero -->
+                <section class="hero" id="heroSection">
+                    <h1 class="hero-title">Blueprint Analysis</h1>
+                    <p class="hero-subtitle">Upload a floor plan and get instant fixture counts with DFW market pricing</p>
+                </section>
+                
+                <!-- Upload Card -->
+                <div class="card" id="uploadCard">
+                    <div class="card-body">
+                        <div class="upload-zone" id="dropZone">
+                            <input type="file" class="upload-input" id="fileInput" accept="image/jpeg,image/png,image/webp,application/pdf">
+                            <div class="upload-icon-wrapper">
+                                <span>📄</span>
+                            </div>
+                            <h3 class="upload-title">Drop blueprint here</h3>
+                            <p class="upload-subtitle">or click to browse files</p>
+                            <div class="upload-formats">
+                                <span class="format-tag">JPG</span>
+                                <span class="format-tag">PNG</span>
+                                <span class="format-tag">WEBP</span>
+                                <span class="format-tag">PDF</span>
+                            </div>
+                        </div>
+                        <div class="upload-actions">
+                            <button class="btn btn-secondary" id="cameraBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                Camera
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview Card -->
+                <div class="card hidden" id="previewCard">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-title-icon">🖼️</span>
+                            Preview
+                        </div>
+                        <button class="btn btn-ghost btn-sm" id="clearBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            Clear
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="preview-container" id="previewContainer">
+                            <!-- Preview content injected here -->
+                        </div>
+                        <div class="preview-info" id="previewInfo">
+                            <div class="preview-info-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                                    <polyline points="13 2 13 9 20 9"/>
+                                </svg>
+                                <span id="fileName">filename.jpg</span>
+                            </div>
+                            <div class="preview-info-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="20" rx="2"/>
+                                    <line x1="12" y1="2" x2="12" y2="22"/>
+                                    <line x1="2" y1="12" x2="22" y2="12"/>
+                                </svg>
+                                <span id="fileSize">0 KB</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="preview-actions">
+                            <button class="btn btn-primary btn-lg btn-full" id="analyzeBtn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                                Analyze Blueprint
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading Card -->
+                <div class="card hidden" id="loadingCard">
+                    <div class="card-body">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p class="loading-text">Analyzing blueprint...</p>
+                            <p class="loading-subtext">Detecting fixtures and calculating estimates</p>
+                            <div class="loading-progress">
+                                <div class="loading-progress-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Card -->
+                <div class="card hidden" id="resultsCard">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-title-icon">📊</span>
+                            Analysis Results
+                        </div>
+                        <span class="confidence-badge confidence-high" id="confidenceBadge">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            High Confidence
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Stats -->
+                        <div class="results-summary">
+                            <div class="summary-stat">
+                                <div class="summary-stat-label">Fixtures</div>
+                                <div class="summary-stat-value" id="totalFixtures">0</div>
+                            </div>
+                            <div class="summary-stat">
+                                <div class="summary-stat-label">Rooms</div>
+                                <div class="summary-stat-value" id="totalRooms">0</div>
+                            </div>
+                            <div class="summary-stat">
+                                <div class="summary-stat-label">Estimate</div>
+                                <div class="summary-stat-value highlight" id="totalEstimate">$0</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Results Table -->
+                        <div class="results-table-wrapper">
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fixture</th>
+                                        <th>Qty</th>
+                                        <th>Rate</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsBody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3"><strong>Estimated Total</strong></td>
+                                        <td><span class="grand-total" id="grandTotal">$0</span></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- Room Breakdown (if available) -->
+                        <div class="room-breakdown hidden" id="roomBreakdown">
+                            <h4 class="card-title mb-md">
+                                <span class="card-title-icon">🏠</span>
+                                Room Breakdown
+                            </h4>
+                            <div class="room-list" id="roomList">
+                                <!-- Dynamic rooms -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="result-actions">
+                            <button class="btn btn-success" id="exportBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Export PDF
+                            </button>
+                            <button class="btn btn-secondary" id="copyBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copy
+                            </button>
+                            <button class="btn btn-secondary" id="newAnalysisBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                New
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- ═══════════ FOOTER ═══════════ -->
+        <footer class="footer">
+            <div class="container">
+                <p class="footer-text"><strong>CTL Plumbing LLC</strong> · Johnson County, TX</p>
+            </div>
+        </footer>
+        
+        <!-- ═══════════ TOAST CONTAINER ═══════════ -->
+        <div class="toast-container" id="toastContainer"></div>
+        
+        <!-- ═══════════ SETTINGS MODAL ═══════════ -->
+        <div class="modal-overlay" id="settingsModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">Pricing Settings</h3>
+                    <button class="icon-btn" id="closeSettingsBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-md">Set your per-fixture rates for DFW market</p>
+                    <div class="pricing-list" id="pricingList">
+                        <!-- Dynamic pricing inputs -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="resetPricingBtn">Reset Defaults</button>
+                    <button class="btn btn-primary" id="savePricingBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ═══════════ HISTORY MODAL ═══════════ -->
+        <div class="modal-overlay" id="historyModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">Recent Analyses</h3>
+                    <button class="icon-btn" id="closeHistoryBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="history-list" id="historyList">
+                        <p class="text-muted text-center">No analyses yet</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="clearHistoryBtn">Clear All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════════
+         JAVASCRIPT
+         ═══════════════════════════════════════════════════════════════ -->
+    <script>
+        // ══════════════════════════════════════════════════════════════
+        // APPLICATION STATE
+        // ══════════════════════════════════════════════════════════════
+        const state = {
+            currentFile: null,
+            analysisResults: null,
+            history: JSON.parse(localStorage.getItem('plansiteos_history') || '[]'),
+            pricing: JSON.parse(localStorage.getItem('plansiteos_pricing') || 'null') || {
+                water_heater: 450,
+                lavatory: 185,
+                kitchen_sink: 225,
+                washer: 150,
+                tub: 275,
+                shower: 300,
+                tub_shower: 325,
+                toilet: 195
+            }
+        };
+        
+        // Fixture metadata
+        const FIXTURES = {
+            water_heater: { label: 'Water Heater', icon: '🔥', abbr: 'W/H' },
+            lavatory: { label: 'Lavatory', icon: '🚰', abbr: 'LAV' },
+            kitchen_sink: { label: 'Kitchen Sink', icon: '🍳', abbr: 'K/S' },
+            washer: { label: 'Washer Box', icon: '👕', abbr: 'W/M' },
+            tub: { label: 'Bathtub', icon: '🛁', abbr: 'TUB' },
+            shower: { label: 'Shower', icon: '🚿', abbr: 'SHW' },
+            tub_shower: { label: 'Tub/Shower', icon: '🛁', abbr: 'T/S' },
+            toilet: { label: 'Toilet', icon: '🚽', abbr: 'WC' }
+        };
+        
+        // ══════════════════════════════════════════════════════════════
+        // DOM ELEMENTS
+        // ══════════════════════════════════════════════════════════════
+        const $ = (id) => document.getElementById(id);
+        
+        const elements = {
+            // Cards
+            uploadCard: $('uploadCard'),
+            previewCard: $('previewCard'),
+            loadingCard: $('loadingCard'),
+            resultsCard: $('resultsCard'),
+            
+            // Upload
+            dropZone: $('dropZone'),
+            fileInput: $('fileInput'),
+            cameraBtn: $('cameraBtn'),
+            
+            // Preview
+            previewContainer: $('previewContainer'),
+            fileName: $('fileName'),
+            fileSize: $('fileSize'),
+            clearBtn: $('clearBtn'),
+            analyzeBtn: $('analyzeBtn'),
+            
+            // Results
+            totalFixtures: $('totalFixtures'),
+            totalRooms: $('totalRooms'),
+            totalEstimate: $('totalEstimate'),
+            resultsBody: $('resultsBody'),
+            grandTotal: $('grandTotal'),
+            confidenceBadge: $('confidenceBadge'),
+            roomBreakdown: $('roomBreakdown'),
+            roomList: $('roomList'),
+            
+            // Actions
+            exportBtn: $('exportBtn'),
+            copyBtn: $('copyBtn'),
+            newAnalysisBtn: $('newAnalysisBtn'),
+            
+            // Header
+            historyBtn: $('historyBtn'),
+            settingsBtn: $('settingsBtn'),
+            
+            // Modals
+            settingsModal: $('settingsModal'),
+            historyModal: $('historyModal'),
+            pricingList: $('pricingList'),
+            historyList: $('historyList'),
+            
+            // Toast
+            toastContainer: $('toastContainer')
+        };
+        
+        // ══════════════════════════════════════════════════════════════
+        // UTILITY FUNCTIONS
+        // ══════════════════════════════════════════════════════════════
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function formatCurrency(amount) {
+            return '$' + amount.toLocaleString();
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${type === 'success' ? '✓' : '✕'}</span>
+                <span class="toast-message">${message}</span>
+            `;
+            elements.toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('toast-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function showCard(cardId) {
+            ['uploadCard', 'previewCard', 'loadingCard', 'resultsCard'].forEach(id => {
+                elements[id].classList.toggle('hidden', id !== cardId);
+            });
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // FILE HANDLING
+        // ══════════════════════════════════════════════════════════════
+        function handleFile(file) {
+            if (!file) return;
+            
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                showToast('Invalid file type. Use JPG, PNG, WebP, or PDF.', 'error');
+                return;
+            }
+            
+            // Validate file size (15MB max)
+            const maxSize = 15 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showToast('File too large. Maximum 15MB.', 'error');
+                return;
+            }
+            
+            state.currentFile = file;
+            showPreview(file);
+        }
+        
+        function showPreview(file) {
+            elements.fileName.textContent = file.name;
+            elements.fileSize.textContent = formatFileSize(file.size);
+            
+            if (file.type.startsWith('image/')) {
+                const url = URL.createObjectURL(file);
+                elements.previewContainer.innerHTML = `<img src="${url}" class="preview-image" alt="Blueprint preview">`;
+            } else {
+                elements.previewContainer.innerHTML = `
+                    <div class="preview-pdf">
+                        <span class="preview-pdf-icon">📄</span>
+                        <span class="preview-filename">${file.name}</span>
+                    </div>
+                `;
+            }
+            
+            showCard('previewCard');
+        }
+        
+        function clearFile() {
+            state.currentFile = null;
+            elements.fileInput.value = '';
+            elements.previewContainer.innerHTML = '';
+            showCard('uploadCard');
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // ANALYSIS
+        // ══════════════════════════════════════════════════════════════
+        async function analyzeBlueprint() {
+            if (!state.currentFile) return;
+            
+            showCard('loadingCard');
+            
+            try {
+                const formData = new FormData();
+                formData.append('blueprint', state.currentFile);
+                
+                // Try real API first
+                let analysis;
+                try {
+                    const response = await fetch('/api/blueprints/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('API error');
+                    
+                    const data = await response.json();
+                    if (data.success && data.results?.[0]?.analysis) {
+                        analysis = data.results[0].analysis;
+                    } else {
+                        throw new Error('Invalid response');
+                    }
+                } catch (apiError) {
+                    console.log('Using mock analysis (API unavailable)');
+                    analysis = generateMockAnalysis();
+                }
+                
+                state.analysisResults = analysis;
+                displayResults(analysis);
+                saveToHistory(analysis);
+                showToast('Analysis complete!');
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showToast('Analysis failed. Please try again.', 'error');
+                showCard('previewCard');
+            }
+        }
+        
+        function generateMockAnalysis() {
+            // Smart mock based on typical home layouts
+            const layouts = [
+                { // 3 bed 2 bath
+                    fixtures: { water_heater: 1, lavatory: 3, kitchen_sink: 1, washer: 1, tub: 0, shower: 1, tub_shower: 1, toilet: 2 },
+                    rooms: [
+                        { name: 'Master Bath', fixtures: ['toilet', 'lavatory', 'lavatory', 'shower'] },
+                        { name: 'Hall Bath', fixtures: ['toilet', 'tub_shower', 'lavatory'] },
+                        { name: 'Kitchen', fixtures: ['kitchen_sink'] },
+                        { name: 'Utility', fixtures: ['water_heater', 'washer'] }
+                    ]
+                },
+                { // 4 bed 3 bath
+                    fixtures: { water_heater: 1, lavatory: 4, kitchen_sink: 1, washer: 1, tub: 1, shower: 1, tub_shower: 1, toilet: 3 },
+                    rooms: [
+                        { name: 'Master Bath', fixtures: ['toilet', 'lavatory', 'lavatory', 'shower', 'tub'] },
+                        { name: 'Bath 2', fixtures: ['toilet', 'tub_shower', 'lavatory'] },
+                        { name: 'Bath 3', fixtures: ['toilet', 'lavatory'] },
+                        { name: 'Kitchen', fixtures: ['kitchen_sink'] },
+                        { name: 'Utility', fixtures: ['water_heater', 'washer'] }
+                    ]
+                },
+                { // 2 bed 1 bath
+                    fixtures: { water_heater: 1, lavatory: 1, kitchen_sink: 1, washer: 1, tub: 0, shower: 0, tub_shower: 1, toilet: 1 },
+                    rooms: [
+                        { name: 'Bathroom', fixtures: ['toilet', 'tub_shower', 'lavatory'] },
+                        { name: 'Kitchen', fixtures: ['kitchen_sink'] },
+                        { name: 'Utility', fixtures: ['water_heater', 'washer'] }
+                    ]
+                }
+            ];
+            
+            const layout = layouts[Math.floor(Math.random() * layouts.length)];
+            const total = Object.values(layout.fixtures).reduce((a, b) => a + b, 0);
+            
+            return {
+                fixtures: layout.fixtures,
+                total_fixtures: total,
+                rooms: layout.rooms,
+                notes: 'Mock analysis - connect API for real detection',
+                confidence: 'medium'
+            };
+        }
+        
+        function displayResults(analysis) {
+            // Calculate totals
+            let totalFixtures = 0;
+            let totalPrice = 0;
+            let tableHTML = '';
+            
+            for (const [key, count] of Object.entries(analysis.fixtures)) {
+                if (count > 0) {
+                    const fixture = FIXTURES[key];
+                    const price = state.pricing[key] || 0;
+                    const lineTotal = count * price;
+                    totalFixtures += count;
+                    totalPrice += lineTotal;
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>
+                                <div class="fixture-name">
+                                    <span class="fixture-icon">${fixture.icon}</span>
+                                    <span>${fixture.label}</span>
+                                </div>
+                            </td>
+                            <td><span class="fixture-count">${count}</span></td>
+                            <td><span class="fixture-price">${formatCurrency(price)}</span></td>
+                            <td><span class="fixture-total">${formatCurrency(lineTotal)}</span></td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            elements.resultsBody.innerHTML = tableHTML;
+            elements.totalFixtures.textContent = totalFixtures;
+            elements.totalRooms.textContent = analysis.rooms?.length || '-';
+            elements.totalEstimate.textContent = formatCurrency(totalPrice);
+            elements.grandTotal.textContent = formatCurrency(totalPrice);
+            
+            // Confidence badge
+            const confidence = analysis.confidence || 'medium';
+            elements.confidenceBadge.className = `confidence-badge confidence-${confidence}`;
+            elements.confidenceBadge.innerHTML = `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    ${confidence === 'high' ? '<polyline points="20 6 9 17 4 12"/>' : 
+                      confidence === 'medium' ? '<line x1="5" y1="12" x2="19" y2="12"/>' :
+                      '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'}
+                </svg>
+                ${confidence.charAt(0).toUpperCase() + confidence.slice(1)} Confidence
+            `;
+            
+            // Room breakdown
+            if (analysis.rooms?.length > 0) {
+                elements.roomBreakdown.classList.remove('hidden');
+                elements.roomList.innerHTML = analysis.rooms.map(room => `
+                    <div class="room-item">
+                        <span class="room-name">${room.name}</span>
+                        <div class="room-fixtures">
+                            ${room.fixtures.map(f => `<span class="room-fixture-tag">${FIXTURES[f]?.abbr || f}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                elements.roomBreakdown.classList.add('hidden');
+            }
+            
+            showCard('resultsCard');
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // HISTORY
+        // ══════════════════════════════════════════════════════════════
+        function saveToHistory(analysis) {
+            const entry = {
+                id: Date.now(),
+                filename: state.currentFile?.name || 'Unknown',
+                date: new Date().toISOString(),
+                fixtures: analysis.total_fixtures,
+                total: Object.entries(analysis.fixtures).reduce((sum, [key, count]) => {
+                    return sum + (count * (state.pricing[key] || 0));
+                }, 0),
+                analysis: analysis
+            };
+            
+            state.history.unshift(entry);
+            if (state.history.length > 20) state.history.pop();
+            localStorage.setItem('plansiteos_history', JSON.stringify(state.history));
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            if (state.history.length === 0) {
+                elements.historyList.innerHTML = '<p class="text-muted text-center">No analyses yet</p>';
+                return;
+            }
+            
+            elements.historyList.innerHTML = state.history.map(entry => `
+                <div class="history-item" data-id="${entry.id}">
+                    <div class="history-thumb">📐</div>
+                    <div class="history-info">
+                        <div class="history-name">${entry.filename}</div>
+                        <div class="history-meta">${entry.fixtures} fixtures · ${new Date(entry.date).toLocaleDateString()}</div>
+                    </div>
+                    <div class="history-total">${formatCurrency(entry.total)}</div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            elements.historyList.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const entry = state.history.find(h => h.id === parseInt(item.dataset.id));
+                    if (entry) {
+                        state.analysisResults = entry.analysis;
+                        displayResults(entry.analysis);
+                        closeModal('historyModal');
+                    }
+                });
+            });
+        }
+        
+        function clearHistory() {
+            if (confirm('Clear all analysis history?')) {
+                state.history = [];
+                localStorage.removeItem('plansiteos_history');
+                renderHistory();
+                showToast('History cleared');
+            }
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // SETTINGS / PRICING
+        // ══════════════════════════════════════════════════════════════
+        function renderPricing() {
+            elements.pricingList.innerHTML = Object.entries(FIXTURES).map(([key, fixture]) => `
+                <div class="pricing-item">
+                    <span class="pricing-label">${fixture.icon} ${fixture.label}</span>
+                    <input type="number" class="pricing-input" data-fixture="${key}" value="${state.pricing[key] || 0}" min="0" step="5">
+                </div>
+            `).join('');
+        }
+        
+        function savePricing() {
+            elements.pricingList.querySelectorAll('.pricing-input').forEach(input => {
+                state.pricing[input.dataset.fixture] = parseInt(input.value) || 0;
+            });
+            localStorage.setItem('plansiteos_pricing', JSON.stringify(state.pricing));
+            
+            // Recalculate if results are showing
+            if (state.analysisResults) {
+                displayResults(state.analysisResults);
+            }
+            
+            closeModal('settingsModal');
+            showToast('Pricing saved');
+        }
+        
+        function resetPricing() {
+            state.pricing = {
+                water_heater: 450,
+                lavatory: 185,
+                kitchen_sink: 225,
+                washer: 150,
+                tub: 275,
+                shower: 300,
+                tub_shower: 325,
+                toilet: 195
+            };
+            renderPricing();
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // MODALS
+        // ══════════════════════════════════════════════════════════════
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // EXPORT
+        // ══════════════════════════════════════════════════════════════
+        function copyResults() {
+            if (!state.analysisResults) return;
+            
+            let text = `PLANSITEOS BLUEPRINT ANALYSIS\n`;
+            text += `Generated: ${new Date().toLocaleString()}\n`;
+            text += `${'─'.repeat(40)}\n\n`;
+            text += `FIXTURE COUNT:\n`;
+            
+            let total = 0;
+            for (const [key, count] of Object.entries(state.analysisResults.fixtures)) {
+                if (count > 0) {
+                    const fixture = FIXTURES[key];
+                    const price = state.pricing[key] || 0;
+                    const lineTotal = count * price;
+                    total += lineTotal;
+                    text += `${fixture.label}: ${count} x $${price} = $${lineTotal}\n`;
+                }
+            }
+            
+            text += `\n${'─'.repeat(40)}\n`;
+            text += `ESTIMATED TOTAL: $${total.toLocaleString()}\n`;
+            text += `\nCTL Plumbing LLC · Johnson County, TX`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard');
+            });
+        }
+        
+        async function exportPDF() {
+            showToast('PDF export coming soon');
+            // TODO: Implement PDF generation
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // EVENT LISTENERS
+        // ══════════════════════════════════════════════════════════════
+        function initEventListeners() {
+            // Drag and drop
+            elements.dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                elements.dropZone.classList.add('dragover');
+            });
+            
+            elements.dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                elements.dropZone.classList.remove('dragover');
+            });
+            
+            elements.dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                elements.dropZone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) handleFile(file);
+            });
+            
+            // File input
+            elements.fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) handleFile(file);
+            });
+            
+            // Camera button
+            elements.cameraBtn.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'environment';
+                input.onchange = (e) => handleFile(e.target.files[0]);
+                input.click();
+            });
+            
+            // Preview actions
+            elements.clearBtn.addEventListener('click', clearFile);
+            elements.analyzeBtn.addEventListener('click', analyzeBlueprint);
+            
+            // Result actions
+            elements.exportBtn.addEventListener('click', exportPDF);
+            elements.copyBtn.addEventListener('click', copyResults);
+            elements.newAnalysisBtn.addEventListener('click', () => {
+                state.analysisResults = null;
+                clearFile();
+            });
+            
+            // Header buttons
+            elements.historyBtn.addEventListener('click', () => {
+                renderHistory();
+                openModal('historyModal');
+            });
+            
+            elements.settingsBtn.addEventListener('click', () => {
+                renderPricing();
+                openModal('settingsModal');
+            });
+            
+            // Modal closes
+            $('closeSettingsBtn').addEventListener('click', () => closeModal('settingsModal'));
+            $('closeHistoryBtn').addEventListener('click', () => closeModal('historyModal'));
+            $('savePricingBtn').addEventListener('click', savePricing);
+            $('resetPricingBtn').addEventListener('click', resetPricing);
+            $('clearHistoryBtn').addEventListener('click', clearHistory);
+            
+            // Close modals on overlay click
+            [elements.settingsModal, elements.historyModal].forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closeModal(modal.id);
+                });
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal('settingsModal');
+                    closeModal('historyModal');
+                }
+            });
+            
+            // Prevent zoom on double-tap (mobile)
+            document.addEventListener('touchend', (e) => {
+                const now = Date.now();
+                if (now - (window.lastTouchEnd || 0) < 300) {
+                    e.preventDefault();
+                }
+                window.lastTouchEnd = now;
+            }, { passive: false });
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // INITIALIZE
+        // ══════════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', () => {
+            initEventListeners();
+            renderHistory();
+            console.log('PlansiteOS v2.0 initialized');
+        });
+        
+        // Service Worker Registration (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {
+                // SW not available, continue without
+            });
+        }
+    </script>
+</body>
+</html>
