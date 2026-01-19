@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileText, MapPin, Calendar, Download, AlertTriangle, Scale, Ruler, Layers, Settings2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, FileText, MapPin, Calendar, Download, AlertTriangle, Scale, Ruler, Layers, Settings2, Eye, EyeOff, Trash2, Sparkles } from 'lucide-react';
 import { api } from '../api/client';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useState } from 'react';

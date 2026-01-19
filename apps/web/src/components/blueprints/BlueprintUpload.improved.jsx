@@ -43,25 +43,38 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
     }
 
     setUploading(true);
-    setUploadProgress(0);
+    let successCount = 0;
+    let failCount = 0;
 
-    const formData = new FormData();
-    files.forEach(file => formData.append('blueprints', file));
-    formData.append('projectName', projectName);
-    if (projectAddress.trim()) formData.append('projectAddress', projectAddress);
+    // Upload files one at a time
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('blueprint', file); // Note: singular 'blueprint', not 'blueprints'
+      formData.append('projectName', `${projectName}${files.length > 1 ? ` - Page ${i + 1}` : ''}`);
+      if (projectAddress.trim()) formData.append('projectAddress', projectAddress);
 
-    try {
-      const response = await axios.post(`${BASE_URL}/api/blueprints/upload-batch`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'x-correlation-id': crypto.randomUUID(),
-        },
-        onUploadProgress: progressEvent => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percentCompleted);
-        },
-      });
+      try {
+        setUploadProgress(Math.round(((i) / files.length) * 100));
 
+        await axios.post(`${BASE_URL}/api/v1/blueprints/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'x-correlation-id': crypto.randomUUID(),
+          },
+        });
+
+        successCount++;
+      } catch (error) {
+        console.error(`Upload error for file ${file.name}:`, error);
+        failCount++;
+        toast.error(`Failed to upload ${file.name}: ${error.response?.data?.error?.message || 'Unknown error'}`);
+      }
+    }
+
+    setUploadProgress(100);
+
+    if (successCount > 0) {
       toast.custom((t) => (
         <div
           className={`${
@@ -78,7 +91,8 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
                   Upload Successful!
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  {files.length} blueprint(s) for "{projectName}" are now being analyzed.
+                  {successCount} blueprint(s) for "{projectName}" are now being analyzed.
+                  {failCount > 0 && ` (${failCount} failed)`}
                 </p>
               </div>
             </div>
@@ -94,13 +108,12 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
         </div>
       ), { duration: 5000 });
 
-      onSuccess(response.data);
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error.response?.data?.error?.message || 'An unknown error occurred during upload.');
-    } finally {
-      setUploading(false);
+      onSuccess({ success: true, uploaded: successCount, failed: failCount });
+    } else {
+      toast.error('All uploads failed. Please try again.');
     }
+
+    setUploading(false);
   };
 
   const fileRejectionItems = fileRejections.map(({ file, errors }) => (
