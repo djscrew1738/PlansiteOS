@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import route modules
+const authRoutes = require('./auth.routes');
 const blueprintsRoutes = require('./blueprints.routes');
 const bidsRoutes = require('./bids.routes');
 const analyticsRoutes = require('./analytics.routes');
@@ -9,6 +10,7 @@ const leadsRoutes = require('./leads.routes');
 // const responsesRoutes = require('./responses.routes');
 
 // Mount routes
+router.use('/auth', authRoutes);
 router.use('/blueprints', blueprintsRoutes);
 router.use('/bids', bidsRoutes);
 router.use('/analytics', analyticsRoutes);
@@ -21,6 +23,7 @@ router.get('/', (req, res) => {
     version: '1.0.0',
     name: 'PipelineOS API',
     endpoints: {
+      auth: '/api/v1/auth',
       blueprints: '/api/v1/blueprints',
       bids: '/api/v1/bids',
       analytics: '/api/v1/analytics',
