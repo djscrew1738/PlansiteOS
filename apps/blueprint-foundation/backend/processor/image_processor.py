@@ -4,6 +4,7 @@ import numpy as np
 from typing import Tuple, Dict, List, Optional
 import tempfile
 import os
+import gc
 
 
 class ImageProcessor:
@@ -85,6 +86,10 @@ class ImageProcessor:
         # Estimate DPI (rough approximation)
         dpi_estimated = self._estimate_dpi(final_width, final_height)
 
+        # Cleanup intermediate arrays
+        del img, gray, deskewed, rotated, enhanced, thumbnail
+        gc.collect()
+
         return {
             "success": True,
             "page_number": page_number,
@@ -124,6 +129,10 @@ class ImageProcessor:
 
         # Detect lines
         lines = cv2.HoughLines(edges, 1, np.pi / 180, 200)
+
+        # Cleanup edge detection array
+        del edges
+        gc.collect()
 
         if lines is None or len(lines) == 0:
             return color, 0.0
@@ -193,8 +202,15 @@ class ImageProcessor:
         # Merge channels
         lab_enhanced = cv2.merge([l_enhanced, a, b])
 
+        # Cleanup intermediate arrays
+        del lab, l, a, b, l_enhanced
+
         # Convert back to BGR
         enhanced = cv2.cvtColor(lab_enhanced, cv2.COLOR_LAB2BGR)
+
+        # Cleanup
+        del lab_enhanced
+        gc.collect()
 
         return enhanced
 
