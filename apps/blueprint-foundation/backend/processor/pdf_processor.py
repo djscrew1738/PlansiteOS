@@ -1,8 +1,10 @@
-"""PDF processing module using pdf2image."""
+"""PDF processing module using pdf2image and pdfplumber."""
 from pdf2image import convert_from_bytes
 from typing import List, Dict
 from PIL import Image
 import io
+import pdfplumber
+import gc
 
 
 class PDFProcessor:
@@ -17,7 +19,7 @@ class PDFProcessor:
         self.dpi = dpi
 
     def extract_pages(self, pdf_data: bytes, selected_pages: List[int] = None) -> List[Dict]:
-        """Extract pages from PDF.
+        """Extract pages from PDF with memory-efficient streaming.
 
         Args:
             pdf_data: PDF file bytes
@@ -27,17 +29,26 @@ class PDFProcessor:
             List of page dicts with page_number and image_bytes
         """
         try:
-            # Convert PDF to images
+            # Get total page count without rendering
+            page_count = self._get_page_count_fast(pdf_data)
+
+            # Determine which pages to process
+            pages_to_extract = selected_pages if selected_pages else list(range(1, page_count + 1))
+
+            # Convert only selected pages to reduce memory usage
             images = convert_from_bytes(
                 pdf_data,
                 dpi=self.dpi,
                 fmt='png',
+                first_page=min(pages_to_extract) if pages_to_extract else 1,
+                last_page=max(pages_to_extract) if pages_to_extract else page_count,
             )
 
             results = []
+            page_offset = min(pages_to_extract) if pages_to_extract else 1
 
             for idx, image in enumerate(images):
-                page_number = idx + 1
+                page_number = page_offset + idx
 
                 # Check if this page is selected
                 if selected_pages and page_number not in selected_pages:
@@ -55,10 +66,29 @@ class PDFProcessor:
                     "height": image.height,
                 })
 
+                # Free memory after processing each image
+                del image
+                gc.collect()
+
             return results
 
         except Exception as e:
             raise Exception(f"Failed to process PDF: {str(e)}")
+
+    def _get_page_count_fast(self, pdf_data: bytes) -> int:
+        """Get page count efficiently using pdfplumber (no rendering).
+
+        Args:
+            pdf_data: PDF file bytes
+
+        Returns:
+            Number of pages
+        """
+        try:
+            with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
+                return len(pdf.pages)
+        except Exception as e:
+            raise Exception(f"Failed to count PDF pages: {str(e)}")
 
     def get_page_count(self, pdf_data: bytes) -> int:
         """Get number of pages in PDF.
@@ -69,12 +99,7 @@ class PDFProcessor:
         Returns:
             Number of pages
         """
-        try:
-            # Use low DPI just to count pages
-            images = convert_from_bytes(pdf_data, dpi=72)
-            return len(images)
-        except Exception as e:
-            raise Exception(f"Failed to count PDF pages: {str(e)}")
+        return self._get_page_count_fast(pdf_data)
 
     def suggest_pages(self, pdf_data: bytes) -> List[int]:
         """Suggest which pages to process based on heuristics.

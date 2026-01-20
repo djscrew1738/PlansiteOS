@@ -12,6 +12,7 @@ from processor.pdf_processor import PDFProcessor
 from uuid import UUID
 import tempfile
 import shutil
+import gc
 
 
 def process_upload(upload_id: str):
@@ -116,6 +117,9 @@ def process_upload(upload_id: str):
 
                 if not result["success"]:
                     upload_warnings.append(f"Page {page_info['page_number']}: {result['error']}")
+                    # Free memory after processing
+                    del page_info["image_bytes"]
+                    gc.collect()
                     continue
 
                 processed_pages.append(result)
@@ -123,6 +127,10 @@ def process_upload(upload_id: str):
                 # Collect warnings
                 if result["warnings"]:
                     upload_warnings.extend([f"Page {page_info['page_number']}: {w}" for w in result["warnings"]])
+
+                # Free memory after processing each page
+                del page_info["image_bytes"]
+                gc.collect()
 
             if not processed_pages:
                 raise Exception("No pages were successfully processed")
