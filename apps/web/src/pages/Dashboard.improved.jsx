@@ -62,21 +62,22 @@ export default function Dashboard() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-10 animate-fade-in-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="bg-primary-100 p-3 rounded-full">
-              <Sparkles className="w-6 h-6 text-primary-600" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="flex-1">
+          <div className="flex items-start gap-4">
+            <div className="bg-gradient-to-br from-primary-100 to-primary-50 p-4 rounded-2xl flex-shrink-0">
+              <Sparkles className="w-8 h-8 text-primary-600" />
             </div>
             <div>
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-                Dashboard
+              <h1 className="text-5xl font-black text-gray-900 tracking-tight mb-2">
+                Command Center
               </h1>
-              <p className="text-gray-500 mt-1">Welcome back, let's build something great today.</p>
+              <p className="text-lg text-gray-600 mb-1">Your PlansiteOS central hub</p>
+              <p className="text-sm text-gray-500">Monitor projects, analyze blueprints, and drive your plumbing business forward</p>
             </div>
           </div>
         </div>
-        <Link to="/blueprints" className="btn-primary btn-lg shadow-lg hover:shadow-xl transition-shadow">
+        <Link to="/blueprints" className="btn-primary btn-lg shadow-lg hover:shadow-xl transition-shadow flex-shrink-0">
           <PlusCircle className="w-5 h-5 mr-2" />
           Upload Blueprint
         </Link>
@@ -183,15 +184,16 @@ function RecentBlueprintsList() {
 
   if (!blueprints?.data || blueprints.data.length === 0) {
     return (
-      <div className="text-center py-16 border-2 border-dashed rounded-2xl">
-        <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <FileText className="w-10 h-10 text-gray-400" />
+      <div className="text-center py-16 bg-gradient-to-br from-primary-50 to-blue-50 border-2 border-primary-100 rounded-2xl">
+        <div className="w-24 h-24 bg-primary-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+          <FileText className="w-12 h-12 text-primary-600" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-800">No blueprints analyzed yet.</h3>
-        <p className="text-gray-500 mb-6">Get started by uploading your first blueprint.</p>
-        <Link to="/blueprints" className="btn-primary">
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Upload Now
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Ready to get started?</h3>
+        <p className="text-lg text-gray-600 mb-2">Upload your first blueprint to unlock AI-powered analysis</p>
+        <p className="text-sm text-gray-500 mb-8">PlansiteOS will extract fixtures, measure components, and help you generate accurate bids</p>
+        <Link to="/blueprints" className="btn-primary btn-lg">
+          <PlusCircle className="w-5 h-5 mr-2" />
+          Upload Your First Blueprint
         </Link>
       </div>
     );
