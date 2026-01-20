@@ -299,6 +299,9 @@ class PlumbingPlanEngine {
         // Draw connection points on fixtures
         this.drawConnectionPoints();
 
+        // Draw live measurements while drawing
+        this.drawLiveMeasurements();
+
         // Draw snap indicators
         this.drawSnapIndicators();
 
@@ -698,6 +701,104 @@ class PlumbingPlanEngine {
         ctx.restore();
     }
 
+    drawLiveMeasurements() {
+        if (!this.tempObject || !this.drawStart) return;
+
+        const ctx = this.ctx;
+        ctx.save();
+
+        // Only show for linear objects (walls, pipes, dimensions)
+        if (this.tempObject.type === 'wall' || this.tempObject.type === 'pipe' || this.tempObject.type === 'dimension') {
+            const x1 = this.tempObject.x1 || this.drawStart.x;
+            const y1 = this.tempObject.y1 || this.drawStart.y;
+            const x2 = this.tempObject.x2;
+            const y2 = this.tempObject.y2;
+
+            // Calculate distance and angle
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+            // Format distance as feet and inches
+            const totalInches = Math.round(distance);
+            const feet = Math.floor(totalInches / 12);
+            const inches = totalInches % 12;
+            const distanceText = feet > 0 ? `${feet}'-${inches}"` : `${inches}"`;
+
+            // Calculate midpoint for label placement
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+
+            // Draw measurement box
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.95)';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1 / this.viewport.zoom;
+
+            // Measure text to size box
+            ctx.font = `${10 / this.viewport.zoom}px sans-serif`;
+            const textWidth = ctx.measureText(distanceText).width;
+            const padding = 4 / this.viewport.zoom;
+            const boxWidth = textWidth + padding * 2;
+            const boxHeight = 16 / this.viewport.zoom;
+
+            // Draw background box
+            ctx.fillRect(
+                midX - boxWidth / 2,
+                midY - boxHeight / 2 - 10 / this.viewport.zoom,
+                boxWidth,
+                boxHeight
+            );
+            ctx.strokeRect(
+                midX - boxWidth / 2,
+                midY - boxHeight / 2 - 10 / this.viewport.zoom,
+                boxWidth,
+                boxHeight
+            );
+
+            // Draw distance text
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                distanceText,
+                midX,
+                midY - 10 / this.viewport.zoom
+            );
+
+            // Draw angle if not horizontal or vertical
+            const normalizedAngle = ((angle % 360) + 360) % 360;
+            if (Math.abs(normalizedAngle) > 5 && Math.abs(normalizedAngle - 90) > 5 && Math.abs(normalizedAngle - 180) > 5 && Math.abs(normalizedAngle - 270) > 5) {
+                const angleText = `${Math.round(normalizedAngle)}°`;
+                const angleTextWidth = ctx.measureText(angleText).width;
+                const angleBoxWidth = angleTextWidth + padding * 2;
+
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.95)';
+                ctx.fillRect(
+                    midX - angleBoxWidth / 2,
+                    midY + 4 / this.viewport.zoom,
+                    angleBoxWidth,
+                    boxHeight
+                );
+                ctx.strokeRect(
+                    midX - angleBoxWidth / 2,
+                    midY + 4 / this.viewport.zoom,
+                    angleBoxWidth,
+                    boxHeight
+                );
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(
+                    angleText,
+                    midX,
+                    midY + 4 / this.viewport.zoom + boxHeight / 2
+                );
+            }
+        }
+
+        ctx.restore();
+    }
+
     // ══════════════════════════════════════════════════════════════
     // BACKGROUND IMAGE
     // ══════════════════════════════════════════════════════════════
@@ -911,16 +1012,16 @@ class PlumbingPlanEngine {
             const hitObj = this.hitTest(world.x, world.y);
             if (hitObj) {
                 if (!e.shiftKey) {
-                    this.selectedObjects = [hitObj];
+                    this.setSelection([hitObj]);
                 } else {
                     if (!this.selectedObjects.includes(hitObj)) {
                         this.selectedObjects.push(hitObj);
+                        this.onSelectionChange?.();
+                        this.render();
                     }
                 }
-                this.render();
             } else {
-                this.selectedObjects = [];
-                this.render();
+                this.setSelection([]);
             }
         } else {
             // Drawing mode
@@ -1091,11 +1192,16 @@ class PlumbingPlanEngine {
     // ══════════════════════════════════════════════════════════════
     // PUBLIC METHODS
     // ══════════════════════════════════════════════════════════════
+    setSelection(objects) {
+        this.selectedObjects = Array.isArray(objects) ? objects : [objects];
+        this.onSelectionChange?.();
+        this.render();
+    }
+
     setTool(tool) {
         this.currentTool = tool;
-        this.selectedObjects = [];
+        this.setSelection([]);
         this.tempObject = null;
-        this.render();
     }
 
     zoom(factor) {

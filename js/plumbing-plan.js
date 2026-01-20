@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup callbacks
     engine.onZoomChange = updateZoomDisplay;
     engine.onCursorMove = updateCursorDisplay;
+    engine.onSelectionChange = updatePropertiesPanel;
 
     // Initialize UI
     initializeTools();
@@ -182,6 +183,141 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// ══════════════════════════════════════════════════════════════
+// PROPERTIES EDITOR
+// ══════════════════════════════════════════════════════════════
+function updatePropertiesPanel() {
+    const panel = $('propertiesPanel');
+    if (!panel) return;
+
+    if (engine.selectedObjects.length === 0) {
+        panel.innerHTML = '<div class="empty-state-sm"><p>Select an object to view properties</p></div>';
+        return;
+    }
+
+    if (engine.selectedObjects.length > 1) {
+        panel.innerHTML = `
+            <div class="property-group">
+                <div class="property-label">Multiple Selection</div>
+                <div class="property-value">${engine.selectedObjects.length} objects selected</div>
+            </div>
+        `;
+        return;
+    }
+
+    const obj = engine.selectedObjects[0];
+    let html = '';
+
+    // Object type
+    html += `
+        <div class="property-group">
+            <div class="property-label">Type</div>
+            <div class="property-value">${obj.type}</div>
+        </div>
+    `;
+
+    // Type-specific properties
+    if (obj.type === 'fixture') {
+        const symbol = PlumbingSymbols[obj.fixtureType];
+        html += `
+            <div class="property-group">
+                <div class="property-label">Fixture</div>
+                <div class="property-value">${symbol?.name || obj.fixtureType}</div>
+            </div>
+            <div class="property-group">
+                <div class="property-label">Position X</div>
+                <input type="number" class="property-input" data-prop="x" value="${Math.round(obj.x)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Position Y</div>
+                <input type="number" class="property-input" data-prop="y" value="${Math.round(obj.y)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Scale</div>
+                <input type="number" class="property-input" data-prop="scale" value="${obj.scale || 1}" step="0.1" min="0.1" max="5" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Rotation</div>
+                <input type="number" class="property-input" data-prop="rotation" value="${obj.rotation || 0}" step="15" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Label</div>
+                <input type="text" class="property-input" data-prop="label" value="${obj.label || ''}" placeholder="Optional label" />
+            </div>
+        `;
+    } else if (obj.type === 'wall') {
+        html += `
+            <div class="property-group">
+                <div class="property-label">Start X</div>
+                <input type="number" class="property-input" data-prop="x1" value="${Math.round(obj.x1)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Start Y</div>
+                <input type="number" class="property-input" data-prop="y1" value="${Math.round(obj.y1)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">End X</div>
+                <input type="number" class="property-input" data-prop="x2" value="${Math.round(obj.x2)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">End Y</div>
+                <input type="number" class="property-input" data-prop="y2" value="${Math.round(obj.y2)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Width</div>
+                <input type="number" class="property-input" data-prop="width" value="${obj.width || 4}" step="1" min="1" max="12" />
+            </div>
+        `;
+    } else if (obj.type === 'pipe') {
+        const pipeType = PipeTypes[obj.pipeType];
+        html += `
+            <div class="property-group">
+                <div class="property-label">Pipe Type</div>
+                <div class="property-value">${pipeType?.name || obj.pipeType}</div>
+            </div>
+            <div class="property-group">
+                <div class="property-label">Start X</div>
+                <input type="number" class="property-input" data-prop="x1" value="${Math.round(obj.x1)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">Start Y</div>
+                <input type="number" class="property-input" data-prop="y1" value="${Math.round(obj.y1)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">End X</div>
+                <input type="number" class="property-input" data-prop="x2" value="${Math.round(obj.x2)}" step="1" />
+            </div>
+            <div class="property-group">
+                <div class="property-label">End Y</div>
+                <input type="number" class="property-input" data-prop="y2" value="${Math.round(obj.y2)}" step="1" />
+            </div>
+        `;
+    }
+
+    panel.innerHTML = html;
+
+    // Add event listeners to all property inputs
+    panel.querySelectorAll('.property-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const prop = e.target.dataset.prop;
+            let value = e.target.value;
+
+            // Parse numbers
+            if (e.target.type === 'number') {
+                value = parseFloat(value);
+            }
+
+            // Update object property
+            obj[prop] = value;
+            engine.render();
+        });
+
+        input.addEventListener('change', () => {
+            engine.saveState();
+        });
+    });
+}
 
 // ══════════════════════════════════════════════════════════════
 // LAYERS
