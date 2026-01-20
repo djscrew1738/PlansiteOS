@@ -29,7 +29,7 @@
     "twilio": "^5.0.0",
     "winston": "^3.11.0",
     "zod": "^3.22.4",
-    "dxf-parser": "^1.2.4"
+    "dxf-parser": "^1.1.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",
