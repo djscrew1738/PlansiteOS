@@ -43,6 +43,17 @@ class PlumbingPlanEngine {
         this.panStart = null;
         this.tempObject = null;
 
+        // Background image
+        this.backgroundImage = null;
+        this.backgroundOpacity = 0.5;
+        this.backgroundLocked = true;
+        this.backgroundPosition = { x: 0, y: 0 };
+        this.backgroundScale = 1;
+
+        // Object snapping
+        this.objectSnap = true;
+        this.snapDistance = 10;
+
         // Initialize
         this.resize();
         this.setupEventListeners();
@@ -114,6 +125,135 @@ class PlumbingPlanEngine {
         };
     }
 
+    // Smart snap: try object snapping first, then grid
+    smartSnap(x, y, excludeObjects = []) {
+        // Try object snapping first if enabled
+        if (this.objectSnap) {
+            const objectSnap = this.snapToObjects(x, y, excludeObjects);
+            if (objectSnap.snapped) {
+                return { x: objectSnap.x, y: objectSnap.y, snapInfo: objectSnap };
+            }
+        }
+
+        // Fall back to grid snapping
+        const gridSnap = this.snapToGrid(x, y);
+        return { x: gridSnap.x, y: gridSnap.y, snapInfo: null };
+    }
+
+    snapToObjects(x, y, excludeObjects = []) {
+        const snapThreshold = this.snapDistance / this.viewport.zoom;
+        let closestSnap = null;
+        let closestDistance = snapThreshold;
+
+        // Get all snap points from all objects
+        for (const obj of this.objects) {
+            // Skip excluded objects (e.g., the object being dragged)
+            if (excludeObjects.includes(obj)) continue;
+
+            const snapPoints = this.getObjectSnapPoints(obj);
+
+            for (const point of snapPoints) {
+                const distance = Math.hypot(point.x - x, point.y - y);
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestSnap = {
+                        x: point.x,
+                        y: point.y,
+                        type: point.type,
+                        object: obj,
+                        snapped: true
+                    };
+                }
+            }
+        }
+
+        if (closestSnap) {
+            return closestSnap;
+        }
+
+        return { x, y, snapped: false };
+    }
+
+    getObjectSnapPoints(obj) {
+        const points = [];
+
+        switch (obj.type) {
+            case 'fixture': {
+                const symbol = PlumbingSymbols[obj.fixtureType];
+                if (!symbol) break;
+
+                const w = symbol.width * (obj.scale || 1);
+                const h = symbol.height * (obj.scale || 1);
+
+                // Corner points
+                points.push(
+                    { x: obj.x, y: obj.y, type: 'corner' },
+                    { x: obj.x + w, y: obj.y, type: 'corner' },
+                    { x: obj.x, y: obj.y + h, type: 'corner' },
+                    { x: obj.x + w, y: obj.y + h, type: 'corner' }
+                );
+
+                // Edge midpoints
+                points.push(
+                    { x: obj.x + w / 2, y: obj.y, type: 'edge' },
+                    { x: obj.x + w / 2, y: obj.y + h, type: 'edge' },
+                    { x: obj.x, y: obj.y + h / 2, type: 'edge' },
+                    { x: obj.x + w, y: obj.y + h / 2, type: 'edge' }
+                );
+
+                // Center point
+                points.push({ x: obj.x + w / 2, y: obj.y + h / 2, type: 'center' });
+
+                // Connection points (if defined)
+                if (symbol.connections) {
+                    for (const cp of symbol.connections) {
+                        points.push({
+                            x: obj.x + cp.x * (obj.scale || 1),
+                            y: obj.y + cp.y * (obj.scale || 1),
+                            type: 'connection',
+                            connectionType: cp.type
+                        });
+                    }
+                }
+                break;
+            }
+
+            case 'wall': {
+                // Start, end, and midpoint
+                points.push(
+                    { x: obj.x1, y: obj.y1, type: 'endpoint' },
+                    { x: obj.x2, y: obj.y2, type: 'endpoint' },
+                    { x: (obj.x1 + obj.x2) / 2, y: (obj.y1 + obj.y2) / 2, type: 'midpoint' }
+                );
+                break;
+            }
+
+            case 'pipe': {
+                if (obj.points && obj.points.length > 0) {
+                    // All points in the pipe path
+                    for (const point of obj.points) {
+                        points.push({ x: point.x, y: point.y, type: 'endpoint' });
+                    }
+                } else {
+                    points.push(
+                        { x: obj.x1, y: obj.y1, type: 'endpoint' },
+                        { x: obj.x2, y: obj.y2, type: 'endpoint' }
+                    );
+                }
+                break;
+            }
+
+            case 'dimension':
+            case 'text': {
+                points.push({ x: obj.x || obj.x1, y: obj.y || obj.y1, type: 'point' });
+                break;
+            }
+        }
+
+        return points;
+    }
+
     // ══════════════════════════════════════════════════════════════
     // RENDERING
     // ══════════════════════════════════════════════════════════════
@@ -136,6 +276,11 @@ class PlumbingPlanEngine {
             this.drawGrid();
         }
 
+        // Draw background image
+        if (this.backgroundImage) {
+            this.drawBackgroundImage();
+        }
+
         // Draw all layers in order
         for (const layer of this.layers) {
             if (layer.visible) {
@@ -150,6 +295,12 @@ class PlumbingPlanEngine {
 
         // Draw selection handles
         this.drawSelectionHandles();
+
+        // Draw connection points on fixtures
+        this.drawConnectionPoints();
+
+        // Draw snap indicators
+        this.drawSnapIndicators();
 
         // Restore context
         ctx.restore();
@@ -230,16 +381,31 @@ class PlumbingPlanEngine {
 
     drawFixture(obj) {
         const symbol = PlumbingSymbols[obj.fixtureType];
-        if (symbol && symbol.draw) {
-            symbol.draw(this.ctx, obj.x, obj.y, obj.scale || 1);
+        if (!symbol || !symbol.draw) return;
+
+        const ctx = this.ctx;
+        ctx.save();
+
+        // Apply rotation if present
+        if (obj.rotation) {
+            const centerX = obj.x + (symbol.width * (obj.scale || 1)) / 2;
+            const centerY = obj.y + (symbol.height * (obj.scale || 1)) / 2;
+            ctx.translate(centerX, centerY);
+            ctx.rotate((obj.rotation * Math.PI) / 180);
+            ctx.translate(-centerX, -centerY);
         }
+
+        // Draw the fixture
+        symbol.draw(ctx, obj.x, obj.y, obj.scale || 1);
+
+        ctx.restore();
 
         // Draw label if present
         if (obj.label) {
-            this.ctx.fillStyle = '#64748b';
-            this.ctx.font = '8px sans-serif';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(obj.label, obj.x + (symbol.width / 2), obj.y - 4);
+            ctx.fillStyle = '#64748b';
+            ctx.font = '8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(obj.label, obj.x + (symbol.width / 2), obj.y - 4);
         }
     }
 
@@ -398,7 +564,195 @@ class PlumbingPlanEngine {
                     handleSize
                 );
             }
+
+            // Draw rotation handle if fixture
+            if (obj.type === 'fixture') {
+                const rotationHandleY = bounds.y - 20 / this.viewport.zoom;
+                ctx.fillStyle = '#10b981';
+                ctx.beginPath();
+                ctx.arc(bounds.x + bounds.width / 2, rotationHandleY, 4 / this.viewport.zoom, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2 / this.viewport.zoom;
+                ctx.stroke();
+
+                // Line to rotation handle
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1 / this.viewport.zoom;
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+                ctx.moveTo(bounds.x + bounds.width / 2, bounds.y);
+                ctx.lineTo(bounds.x + bounds.width / 2, rotationHandleY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
         }
+    }
+
+    drawSnapIndicators() {
+        if (!this.currentSnapInfo || !this.currentSnapInfo.snapped) return;
+
+        const ctx = this.ctx;
+        const snapPoint = { x: this.currentSnapInfo.x, y: this.currentSnapInfo.y };
+
+        // Draw snap indicator
+        ctx.save();
+        ctx.strokeStyle = '#10b981';
+        ctx.fillStyle = '#10b981';
+        ctx.lineWidth = 2 / this.viewport.zoom;
+
+        // Draw crosshair at snap point
+        const size = 8 / this.viewport.zoom;
+        ctx.beginPath();
+        ctx.moveTo(snapPoint.x - size, snapPoint.y);
+        ctx.lineTo(snapPoint.x + size, snapPoint.y);
+        ctx.moveTo(snapPoint.x, snapPoint.y - size);
+        ctx.lineTo(snapPoint.x, snapPoint.y + size);
+        ctx.stroke();
+
+        // Draw circle around snap point
+        ctx.beginPath();
+        ctx.arc(snapPoint.x, snapPoint.y, size / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Draw connection line to snapped object if it's a connection point
+        if (this.currentSnapInfo.type === 'connection' && this.currentSnapInfo.object) {
+            const objBounds = this.getObjectBounds(this.currentSnapInfo.object);
+            if (objBounds) {
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.3)';
+                ctx.lineWidth = 1 / this.viewport.zoom;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(snapPoint.x, snapPoint.y);
+                ctx.lineTo(objBounds.x + objBounds.width / 2, objBounds.y + objBounds.height / 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        ctx.restore();
+    }
+
+    drawConnectionPoints() {
+        const ctx = this.ctx;
+        ctx.save();
+
+        // Show connection points on selected fixtures or when using pipe tools
+        const showConnections = this.currentTool.startsWith('pipe-') || this.selectedObjects.length > 0;
+        if (!showConnections) {
+            ctx.restore();
+            return;
+        }
+
+        // Get fixtures to show connection points for
+        let fixtures = [];
+        if (this.currentTool.startsWith('pipe-')) {
+            // Show all fixtures when using pipe tool
+            fixtures = this.objects.filter(obj => obj.type === 'fixture');
+        } else {
+            // Show only selected fixtures
+            fixtures = this.selectedObjects.filter(obj => obj.type === 'fixture');
+        }
+
+        for (const obj of fixtures) {
+            const symbol = PlumbingSymbols[obj.fixtureType];
+            if (!symbol || !symbol.connections) continue;
+
+            for (const conn of symbol.connections) {
+                const x = obj.x + conn.x * (obj.scale || 1);
+                const y = obj.y + conn.y * (obj.scale || 1);
+
+                // Color code by connection type
+                let color = '#3b82f6'; // Default blue
+                if (conn.type === 'waste') {
+                    color = '#64748b'; // Gray for waste
+                } else if (conn.type === 'supply-hot') {
+                    color = '#ef4444'; // Red for hot water
+                } else if (conn.type === 'supply-cold') {
+                    color = '#3b82f6'; // Blue for cold water
+                } else if (conn.type === 'supply') {
+                    color = '#8b5cf6'; // Purple for generic supply
+                } else if (conn.type === 'vent') {
+                    color = '#10b981'; // Green for vent
+                }
+
+                // Draw connection point
+                ctx.strokeStyle = color;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 2 / this.viewport.zoom;
+
+                const radius = 3 / this.viewport.zoom;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Draw inner dot
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, radius / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        ctx.restore();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // BACKGROUND IMAGE
+    // ══════════════════════════════════════════════════════════════
+    drawBackgroundImage() {
+        if (!this.backgroundImage) return;
+
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.globalAlpha = this.backgroundOpacity;
+
+        const imgWidth = this.backgroundImage.width * this.backgroundScale;
+        const imgHeight = this.backgroundImage.height * this.backgroundScale;
+
+        ctx.drawImage(
+            this.backgroundImage,
+            this.backgroundPosition.x,
+            this.backgroundPosition.y,
+            imgWidth,
+            imgHeight
+        );
+
+        ctx.restore();
+    }
+
+    loadBackgroundImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    this.backgroundImage = img;
+                    // Center the image
+                    const centerX = (this.canvas.width / 2 - this.viewport.x) / this.viewport.zoom - (img.width / 2);
+                    const centerY = (this.canvas.height / 2 - this.viewport.y) / this.viewport.zoom - (img.height / 2);
+                    this.backgroundPosition = { x: centerX, y: centerY };
+                    this.backgroundScale = 1;
+                    this.render();
+                    resolve(img);
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    removeBackgroundImage() {
+        this.backgroundImage = null;
+        this.render();
+    }
+
+    setBackgroundOpacity(opacity) {
+        this.backgroundOpacity = opacity / 100;
+        this.render();
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -543,7 +897,9 @@ class PlumbingPlanEngine {
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
         const world = this.screenToWorld(screenX, screenY);
-        const snapped = this.snapToGrid(world.x, world.y);
+        const snapResult = this.smartSnap(world.x, world.y, this.selectedObjects);
+        const snapped = { x: snapResult.x, y: snapResult.y };
+        this.currentSnapInfo = snapResult.snapInfo;
 
         if (this.currentTool === 'pan' || e.button === 1) {
             // Pan mode
@@ -578,7 +934,9 @@ class PlumbingPlanEngine {
         const screenX = e.clientX - rect.left;
         const screenY = e.clientY - rect.top;
         const world = this.screenToWorld(screenX, screenY);
-        const snapped = this.snapToGrid(world.x, world.y);
+        const snapResult = this.smartSnap(world.x, world.y, this.selectedObjects);
+        const snapped = { x: snapResult.x, y: snapResult.y };
+        this.currentSnapInfo = snapResult.snapInfo;
 
         // Update cursor position display
         this.onCursorMove?.(snapped.x, snapped.y);
@@ -818,6 +1176,103 @@ class PlumbingPlanEngine {
             newSelection.push(duplicate);
         }
         this.selectedObjects = newSelection;
+    }
+
+    rotateSelected(degrees) {
+        for (const obj of this.selectedObjects) {
+            if (obj.type === 'fixture') {
+                obj.rotation = (obj.rotation || 0) + degrees;
+                // Normalize to 0-360
+                obj.rotation = ((obj.rotation % 360) + 360) % 360;
+            }
+        }
+        this.saveState();
+        this.render();
+    }
+
+    alignSelected(direction) {
+        if (this.selectedObjects.length < 2) return;
+
+        const bounds = this.selectedObjects.map(obj => this.getObjectBounds(obj));
+
+        switch (direction) {
+            case 'left':
+                const minX = Math.min(...bounds.map(b => b.x));
+                this.selectedObjects.forEach((obj, i) => {
+                    const offset = minX - bounds[i].x;
+                    if (obj.x !== undefined) obj.x += offset;
+                    if (obj.x1 !== undefined) {
+                        obj.x1 += offset;
+                        obj.x2 += offset;
+                    }
+                });
+                break;
+
+            case 'center':
+                const avgCenterX = bounds.reduce((sum, b) => sum + (b.x + b.width / 2), 0) / bounds.length;
+                this.selectedObjects.forEach((obj, i) => {
+                    const currentCenter = bounds[i].x + bounds[i].width / 2;
+                    const offset = avgCenterX - currentCenter;
+                    if (obj.x !== undefined) obj.x += offset;
+                    if (obj.x1 !== undefined) {
+                        obj.x1 += offset;
+                        obj.x2 += offset;
+                    }
+                });
+                break;
+
+            case 'right':
+                const maxX = Math.max(...bounds.map(b => b.x + b.width));
+                this.selectedObjects.forEach((obj, i) => {
+                    const offset = maxX - (bounds[i].x + bounds[i].width);
+                    if (obj.x !== undefined) obj.x += offset;
+                    if (obj.x1 !== undefined) {
+                        obj.x1 += offset;
+                        obj.x2 += offset;
+                    }
+                });
+                break;
+
+            case 'top':
+                const minY = Math.min(...bounds.map(b => b.y));
+                this.selectedObjects.forEach((obj, i) => {
+                    const offset = minY - bounds[i].y;
+                    if (obj.y !== undefined) obj.y += offset;
+                    if (obj.y1 !== undefined) {
+                        obj.y1 += offset;
+                        obj.y2 += offset;
+                    }
+                });
+                break;
+
+            case 'middle':
+                const avgCenterY = bounds.reduce((sum, b) => sum + (b.y + b.height / 2), 0) / bounds.length;
+                this.selectedObjects.forEach((obj, i) => {
+                    const currentCenter = bounds[i].y + bounds[i].height / 2;
+                    const offset = avgCenterY - currentCenter;
+                    if (obj.y !== undefined) obj.y += offset;
+                    if (obj.y1 !== undefined) {
+                        obj.y1 += offset;
+                        obj.y2 += offset;
+                    }
+                });
+                break;
+
+            case 'bottom':
+                const maxY = Math.max(...bounds.map(b => b.y + b.height));
+                this.selectedObjects.forEach((obj, i) => {
+                    const offset = maxY - (bounds[i].y + bounds[i].height);
+                    if (obj.y !== undefined) obj.y += offset;
+                    if (obj.y1 !== undefined) {
+                        obj.y1 += offset;
+                        obj.y2 += offset;
+                    }
+                });
+                break;
+        }
+
+        this.saveState();
+        this.render();
     }
 
     clear() {

@@ -330,6 +330,11 @@ function initializeEventListeners() {
         engine.grid.snap = e.target.checked;
     });
 
+    // Object snap toggle
+    $('objectSnapToggle')?.addEventListener('change', (e) => {
+        engine.objectSnap = e.target.checked;
+    });
+
     // Settings
     $('scaleSelect')?.addEventListener('change', (e) => {
         currentPlan.scale = parseFloat(e.target.value);
@@ -355,6 +360,99 @@ function initializeEventListeners() {
     $('closeExportModal')?.addEventListener('click', closeExportModal);
     $('cancelExportBtn')?.addEventListener('click', closeExportModal);
     $('confirmExportBtn')?.addEventListener('click', handleExport);
+
+    // Background image controls
+    $('uploadBackgroundBtn')?.addEventListener('click', () => {
+        $('backgroundImageInput')?.click();
+    });
+
+    $('backgroundImageInput')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            await engine.loadBackgroundImage(file);
+            $('backgroundImageControls')?.classList.remove('hidden');
+            showToast('Background image loaded');
+        }
+    });
+
+    $('backgroundOpacity')?.addEventListener('input', (e) => {
+        engine.backgroundOpacity = parseInt(e.target.value) / 100;
+        engine.render();
+    });
+
+    $('lockBackground')?.addEventListener('change', (e) => {
+        engine.backgroundLocked = e.target.checked;
+    });
+
+    $('removeBackgroundBtn')?.addEventListener('click', () => {
+        engine.backgroundImage = null;
+        $('backgroundImageControls')?.classList.add('hidden');
+        $('backgroundImageInput').value = '';
+        engine.render();
+        showToast('Background image removed');
+    });
+
+    // Rotation controls
+    $('rotateLeftBtn')?.addEventListener('click', () => {
+        engine.rotateSelected(-90);
+        showToast('Rotated 90° left');
+    });
+
+    $('rotateRightBtn')?.addEventListener('click', () => {
+        engine.rotateSelected(90);
+        showToast('Rotated 90° right');
+    });
+
+    // Alignment controls
+    $('alignLeftBtn')?.addEventListener('click', () => {
+        engine.alignSelected('left');
+        showToast('Aligned left');
+    });
+
+    $('alignCenterBtn')?.addEventListener('click', () => {
+        engine.alignSelected('center');
+        showToast('Aligned center');
+    });
+
+    $('alignRightBtn')?.addEventListener('click', () => {
+        engine.alignSelected('right');
+        showToast('Aligned right');
+    });
+
+    $('alignTopBtn')?.addEventListener('click', () => {
+        engine.alignSelected('top');
+        showToast('Aligned top');
+    });
+
+    $('alignMiddleBtn')?.addEventListener('click', () => {
+        engine.alignSelected('middle');
+        showToast('Aligned middle');
+    });
+
+    $('alignBottomBtn')?.addEventListener('click', () => {
+        engine.alignSelected('bottom');
+        showToast('Aligned bottom');
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Skip if typing in input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch (e.key.toLowerCase()) {
+            case 'q':
+                engine.rotateSelected(-90);
+                break;
+            case 'e':
+                engine.rotateSelected(90);
+                break;
+            case 'delete':
+            case 'backspace':
+                e.preventDefault();
+                engine.deleteSelected();
+                break;
+        }
+    });
 }
 
 function updateZoomDisplay(zoom) {

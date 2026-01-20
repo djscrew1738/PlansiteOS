@@ -657,6 +657,95 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   BACKGROUND IMAGE CONTROLS
+   ══════════════════════════════════════════════════════════════ */
+.background-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.background-image-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.background-image-controls.hidden {
+    display: none;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-size: 12px;
+}
+
+.control-row label {
+    color: var(--text-secondary);
+}
+
+.control-row input[type="range"] {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-full);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.control-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.control-row input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.control-row input[type="checkbox"] {
+    cursor: pointer;
+}
+
+#opacityValue {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary);
+    min-width: 35px;
+    text-align: right;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROTATION HANDLES
+   ══════════════════════════════════════════════════════════════ */
+.rotation-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--accent-success);
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: grab;
+}
+
+.rotation-handle:active {
+    cursor: grabbing;
+}
+
+/* ══════════════════════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════════════════════ */
 @media (max-width: 1200px) {

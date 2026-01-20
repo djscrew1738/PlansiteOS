@@ -431,6 +431,296 @@ const PlumbingSymbols = {
 
             ctx.restore();
         }
+    },
+
+    mopSink: {
+        id: 'mopSink',
+        name: 'Mop Sink',
+        category: 'utility',
+        icon: '🧹',
+        width: 24,
+        height: 24,
+        connections: [
+            { type: 'waste', x: 12, y: 12 },
+            { type: 'supply-hot', x: 6, y: 4 },
+            { type: 'supply-cold', x: 18, y: 4 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Deep sink bowl
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = '#f8fafc';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(2, 2, 20, 20);
+            ctx.fillRect(2, 2, 20, 20);
+
+            // Drain
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.arc(12, 12, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Label
+            ctx.fillStyle = '#475569';
+            ctx.font = '8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('MS', 12, 18);
+
+            ctx.restore();
+        }
+    },
+
+    utilitySink: {
+        id: 'utilitySink',
+        name: 'Utility Sink',
+        category: 'utility',
+        icon: '🪣',
+        width: 24,
+        height: 20,
+        connections: [
+            { type: 'waste', x: 12, y: 10 },
+            { type: 'supply-hot', x: 8, y: 18 },
+            { type: 'supply-cold', x: 16, y: 18 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Double basin
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = '#f8fafc';
+            ctx.lineWidth = 1.5;
+
+            // Left basin
+            ctx.beginPath();
+            ctx.rect(2, 4, 9, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Right basin
+            ctx.beginPath();
+            ctx.rect(13, 4, 9, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Drains
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.arc(6.5, 10, 1, 0, Math.PI * 2);
+            ctx.arc(17.5, 10, 1, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+    },
+
+    floorSink: {
+        id: 'floorSink',
+        name: 'Floor Sink',
+        category: 'utility',
+        icon: '⬛',
+        width: 18,
+        height: 18,
+        connections: [
+            { type: 'waste', x: 9, y: 9 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Floor sink box
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            ctx.fillRect(3, 3, 12, 12);
+            ctx.strokeRect(3, 3, 12, 12);
+
+            // Center drain
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.arc(9, 9, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cross hatch
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(6, 6);
+            ctx.lineTo(12, 12);
+            ctx.moveTo(12, 6);
+            ctx.lineTo(6, 12);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    },
+
+    waterFountain: {
+        id: 'waterFountain',
+        name: 'Water Fountain',
+        category: 'utility',
+        icon: '⛲',
+        width: 16,
+        height: 20,
+        connections: [
+            { type: 'waste', x: 8, y: 12 },
+            { type: 'supply-cold', x: 8, y: 4 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Base
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(2, 14, 12, 4);
+
+            // Basin
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = '#f8fafc';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(8, 10, 6, 0, Math.PI);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Spout
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(8, 4);
+            ctx.lineTo(8, 8);
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#475569';
+            ctx.font = '6px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('WF', 8, 13);
+
+            ctx.restore();
+        }
+    },
+
+    gasOutlet: {
+        id: 'gasOutlet',
+        name: 'Gas Outlet',
+        category: 'utility',
+        icon: '🔥',
+        width: 12,
+        height: 12,
+        connections: [
+            { type: 'gas', x: 6, y: 6 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Circle for gas outlet
+            ctx.strokeStyle = '#f59e0b';
+            ctx.fillStyle = '#fef3c7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(6, 6, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // G label
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = 'bold 8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('G', 6, 6);
+
+            ctx.restore();
+        }
+    },
+
+    greaseTrap: {
+        id: 'greaseTrap',
+        name: 'Grease Trap',
+        category: 'utility',
+        icon: '🛢️',
+        width: 30,
+        height: 24,
+        connections: [
+            { type: 'waste', x: 6, y: 12 },
+            { type: 'waste', x: 24, y: 12 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Grease trap body
+            ctx.strokeStyle = '#1e293b';
+            ctx.fillStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(4, 4, 22, 16);
+            ctx.fillRect(4, 4, 22, 16);
+
+            // Internal baffle
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(15, 6);
+            ctx.lineTo(15, 18);
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#475569';
+            ctx.font = '7px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('GT', 15, 14);
+
+            ctx.restore();
+        }
+    },
+
+    backflowPreventer: {
+        id: 'backflowPreventer',
+        name: 'Backflow Preventer',
+        category: 'utility',
+        icon: '⚠️',
+        width: 16,
+        height: 16,
+        connections: [
+            { type: 'supply', x: 2, y: 8 },
+            { type: 'supply', x: 14, y: 8 }
+        ],
+        draw(ctx, x, y, scale = 1) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Diamond shape
+            ctx.strokeStyle = '#3b82f6';
+            ctx.fillStyle = '#dbeafe';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(8, 2);
+            ctx.lineTo(14, 8);
+            ctx.lineTo(8, 14);
+            ctx.lineTo(2, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#3b82f6';
+            ctx.font = '7px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('BP', 8, 10);
+
+            ctx.restore();
+        }
     }
 };
 
@@ -450,7 +740,7 @@ const FixtureCategories = {
     },
     utility: {
         name: 'Utility',
-        fixtures: ['waterHeater', 'washer', 'floorDrain', 'hosebibb']
+        fixtures: ['waterHeater', 'washer', 'floorDrain', 'hosebibb', 'mopSink', 'utilitySink', 'floorSink', 'waterFountain', 'gasOutlet', 'greaseTrap', 'backflowPreventer']
     }
 };
 
@@ -554,5 +844,11 @@ const PipeTypes = {
         color: '#10b981',
         width: 2,
         style: 'dashed'
+    },
+    'gas': {
+        name: 'Gas Line',
+        color: '#f59e0b',
+        width: 2,
+        style: 'solid'
     }
 };

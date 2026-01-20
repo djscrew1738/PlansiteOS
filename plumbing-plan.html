@@ -179,6 +179,44 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Background Image -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Background Image</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="background-controls">
+                        <input type="file" id="backgroundImageInput" accept="image/*" style="display: none;" />
+                        <button class="btn btn-secondary btn-sm btn-full" id="uploadBackgroundBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            Upload Blueprint
+                        </button>
+                        <div id="backgroundImageControls" class="background-image-controls hidden">
+                            <div class="control-row">
+                                <label>Opacity</label>
+                                <input type="range" id="backgroundOpacity" min="0" max="100" value="50" />
+                                <span id="opacityValue">50%</span>
+                            </div>
+                            <div class="control-row">
+                                <label>Lock Position</label>
+                                <input type="checkbox" id="lockBackground" checked />
+                            </div>
+                            <button class="btn btn-ghost btn-sm btn-full" id="removeBackgroundBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                                Remove Background
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <!-- CENTER: Canvas -->
@@ -216,6 +254,43 @@
                 </div>
                 <div class="toolbar-divider"></div>
                 <div class="toolbar-group">
+                    <button class="toolbar-btn" id="rotateLeftBtn" title="Rotate Left (Q)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="rotateRightBtn" title="Rotate Right (E)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" id="alignLeftBtn" title="Align Left">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="12" x2="15" y2="12"/>
+                            <line x1="3" y1="18" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="alignCenterBtn" title="Align Center">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="6" y1="12" x2="18" y2="12"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="alignRightBtn" title="Align Right">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="9" y1="12" x2="21" y2="12"/>
+                            <line x1="6" y1="18" x2="21" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
                     <label class="toolbar-label">
                         Grid:
                         <input type="checkbox" id="gridToggle" checked />
@@ -223,6 +298,10 @@
                     <label class="toolbar-label">
                         Snap:
                         <input type="checkbox" id="snapToggle" checked />
+                    </label>
+                    <label class="toolbar-label">
+                        Obj Snap:
+                        <input type="checkbox" id="objectSnapToggle" checked />
                     </label>
                 </div>
                 <div class="toolbar-spacer"></div>
