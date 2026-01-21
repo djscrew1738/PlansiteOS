@@ -1,0 +1,113 @@
+# PlansiteOS Prometheus Configuration
+# Version: 3.1
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'plansiteos'
+    env: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+
+  # Kong API Gateway
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['kong:8001']
+    metrics_path: /metrics
+
+  # Parsing Service
+  - job_name: 'parsing-service'
+    static_configs:
+      - targets: ['parsing:8080']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Vision Service
+  - job_name: 'vision-service'
+    static_configs:
+      - targets: ['vision:8081']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Estimation Service
+  - job_name: 'estimation-service'
+    static_configs:
+      - targets: ['estimation:8082']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Rendering Service
+  - job_name: 'rendering-service'
+    static_configs:
+      - targets: ['rendering:8083']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # AI Assistant Service
+  - job_name: 'assistant-service'
+    static_configs:
+      - targets: ['assistant:8084']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # PostgreSQL (via postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    metrics_path: /metrics
+
+  # Redis (via redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    metrics_path: /metrics
+
+  # MinIO
+  - job_name: 'minio'
+    static_configs:
+      - targets: ['minio:9000']
+    metrics_path: /minio/v2/metrics/cluster
+    scheme: http
+
+  # NATS JetStream
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['nats:8222']
+    metrics_path: /metrics
+
+  # Node Exporter (host metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metrics_path: /metrics
+
+  # cAdvisor (container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # Loki
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    metrics_path: /metrics
