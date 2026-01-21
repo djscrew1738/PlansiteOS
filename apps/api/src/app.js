@@ -13,13 +13,27 @@ const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
 
 // CORS Configuration
 app.use((req, res, next) => {
+  // Build allowed origins from environment variables
+  const localIP = process.env.LOCAL_IP || '192.168.1.215';
+  const tailscaleIP = process.env.TAILSCALE_IP || '100.109.158.92';
+  const domain = process.env.DOMAIN || 'cbrnholdings.com';
+
   const allowedOrigins = [
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:5000',
-    'http://100.109.158.92:5000',
+    `http://${localIP}:3000`,
+    `http://${localIP}:5000`,
+    `http://${tailscaleIP}:3000`,
+    `http://${tailscaleIP}:5000`,
+    `https://${domain}`,
+    `https://www.${domain}`,
+    // Legacy domains
     'https://ctlplumbingllc.com',
     'https://www.ctlplumbingllc.com',
+    // Custom CORS origins from env
+    ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : []),
     process.env.DOMAIN_URL
   ].filter(Boolean);
 
@@ -28,9 +42,10 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
   }
 
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-correlation-id');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
@@ -105,20 +120,32 @@ process.on('SIGTERM', async () => {
 // Start server
 if (require.main === module) {
   app.listen(PORT, HOST, () => {
-    logger.info(`PipelineOS server started`, {
+    const localIP = process.env.LOCAL_IP || '192.168.1.215';
+    const tailscaleIP = process.env.TAILSCALE_IP || '100.109.158.92';
+    const domain = process.env.DOMAIN || 'cbrnholdings.com';
+
+    logger.info(`PlansiteOS server started`, {
       port: PORT,
       host: HOST,
-      tailscaleIp: process.env.TAILSCALE_IP || '100.109.158.92',
-      domain: process.env.DOMAIN || 'ctlplumbingllc.com',
+      localIP,
+      tailscaleIP,
+      domain,
       env: process.env.NODE_ENV || 'development',
       nodeVersion: process.version
     });
 
-    console.log('\n🚀 Server Access URLs:');
+    console.log('\n🚀 PlansiteOS Server Started!');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📡 API Access URLs:');
     console.log(`   Local:     http://localhost:${PORT}`);
-    console.log(`   Tailscale: http://${process.env.TAILSCALE_IP || '100.109.158.92'}:${PORT}`);
-    console.log(`   Domain:    https://${process.env.DOMAIN || 'ctlplumbingllc.com'}:${PORT}`);
+    console.log(`   Network:   http://${localIP}:${PORT}`);
+    console.log(`   Tailscale: http://${tailscaleIP}:${PORT}`);
+    console.log(`   Domain:    https://${domain}`);
     console.log('');
+    console.log('🔗 API Endpoints:');
+    console.log(`   Health:    http://localhost:${PORT}/api/health`);
+    console.log(`   API v1:    http://localhost:${PORT}/api/v1`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   });
 }
 
