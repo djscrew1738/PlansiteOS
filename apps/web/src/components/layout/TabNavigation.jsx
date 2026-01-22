@@ -4,7 +4,7 @@ import {
   MessageSquare,
   FileImage,
   Calculator,
-  Package
+  Users
 } from 'lucide-react';
 
 const tabs = [
@@ -42,12 +42,12 @@ const tabs = [
     activeBg: 'bg-emerald-50',
   },
   {
-    name: 'Material',
-    path: '/material',
-    icon: Package,
-    gradient: 'from-amber-500 to-orange-500',
-    activeText: 'text-amber-600',
-    activeBg: 'bg-amber-50',
+    name: 'Leads',
+    path: '/leads',
+    icon: Users,
+    gradient: 'from-violet-500 to-purple-500',
+    activeText: 'text-violet-600',
+    activeBg: 'bg-violet-50',
   },
 ];
 

@@ -4,7 +4,7 @@ import {
   MessageSquare,
   FileImage,
   Calculator,
-  Package
+  Users
 } from 'lucide-react';
 
 const tabs = [
@@ -42,12 +42,12 @@ const tabs = [
     activeText: 'text-emerald-600',
   },
   {
-    name: 'Material',
-    shortName: 'Material',
-    path: '/material',
-    icon: Package,
-    gradient: 'from-amber-500 to-orange-500',
-    activeText: 'text-amber-600',
+    name: 'Leads',
+    shortName: 'Leads',
+    path: '/leads',
+    icon: Users,
+    gradient: 'from-violet-500 to-purple-500',
+    activeText: 'text-violet-600',
   },
 ];
 
@@ -62,7 +62,7 @@ export default function MobileBottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/50 sm:hidden z-50 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200/50 md:hidden z-50 safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
