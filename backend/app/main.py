@@ -5,6 +5,7 @@ import uuid
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 import redis
 from rq import Queue
@@ -195,7 +196,7 @@ async def healthcheck(db: Session = Depends(get_db)):
     redis_ok = True
     storage_ok = True
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
     except Exception:  # noqa: BLE001
         db_ok = False
     try:

@@ -12,12 +12,12 @@ class OpenAIProvider {
     return false; // Or true if you implement it
   }
 
-  async chat(messages, options = {}) {
+  async chat(messages, _options = {}) {
     // Implementation for OpenAI chat
     throw new Error('Not implemented');
   }
 
-  async analyzeImage(imagePath, prompt, options = {}) {
+  async analyzeImage(imagePath, prompt, _options = {}) {
     // Implementation for OpenAI vision
     throw new Error('Not implemented');
   }

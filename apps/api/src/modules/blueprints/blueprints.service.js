@@ -445,7 +445,7 @@ Respond ONLY with the JSON object, no additional text.`;
             })
             .returning('id');
 
-          const roomId = roomResult.id;
+          const _roomId = roomResult.id;
 
           // Insert fixtures for this room
           for (const fixture of room.fixtures) {

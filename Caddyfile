@@ -1,25 +1,37 @@
-{
-  email admin@example.com
-}
+# PlansiteOS - Caddy Configuration for Tailscale Access
+# Accessible via http://100.109.158.92:8081
 
-:80, :443 {
+:80 {
   encode zstd gzip
 
+  # API routes
   @api path /api/*
   reverse_proxy @api api:8000
 
+  # Health check endpoint
+  @health path /health
+  respond @health 200
+
+  # Frontend (all other requests)
   reverse_proxy frontend:4173
 
+  # Security headers
   header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options "nosniff"
-    X-Frame-Options "DENY"
-    Referrer-Policy "no-referrer"
-    Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    X-XSS-Protection "1; mode=block"
   }
 
-  @upload path /api/projects/*/uploads
+  # Large file uploads for blueprints (200MB limit)
+  @upload path /api/blueprints/* /api/projects/*/uploads
   request_body @upload {
     max_size 200MB
+  }
+
+  # Access logs
+  log {
+    output file /var/log/caddy/access.log
+    format json
   }
 }

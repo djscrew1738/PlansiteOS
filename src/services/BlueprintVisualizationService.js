@@ -1,12 +1,12 @@
 // Try to load canvas - it may not be installed
-let createCanvas, loadImage, registerFont, canvasAvailable;
+let createCanvas, loadImage, _registerFont, canvasAvailable;
 try {
   const canvas = require('canvas');
   createCanvas = canvas.createCanvas;
   loadImage = canvas.loadImage;
-  registerFont = canvas.registerFont;
+  _registerFont = canvas.registerFont;
   canvasAvailable = true;
-} catch (error) {
+} catch (_error) {
   canvasAvailable = false;
   console.warn('Canvas module not available - blueprint annotation will be disabled');
 }
@@ -473,7 +473,7 @@ class BlueprintVisualizationService {
    * Calculate scale factor from blueprint
    * @private
    */
-  calculateScale(summary, imageWidth, imageHeight) {
+  calculateScale(summary, _imageWidth, _imageHeight) {
     // Default scale: 1 inch = 10 pixels
     let scale = 10;
 

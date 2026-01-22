@@ -161,7 +161,7 @@ function validateFile(file) {
   // Check if file exists on disk
   try {
     fs.access(file.path);
-  } catch (error) {
+  } catch (_error) {
     errors.push('Uploaded file not accessible');
   }
 

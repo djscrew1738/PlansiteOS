@@ -41,6 +41,8 @@ services:
 
   api:
     build: ./backend
+    ports:
+      - "8001:8000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
@@ -87,23 +89,10 @@ services:
 
   frontend:
     build: ./frontend
+    ports:
+      - "5173:4173"
     environment:
       VITE_API_BASE: ${VITE_API_BASE}
-    networks:
-      - frontend
-
-  caddy:
-    image: caddy:2
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - api
-      - frontend
     networks:
       - frontend
 
@@ -116,5 +105,3 @@ volumes:
   pgdata:
   redisdata:
   miniodata:
-  caddy_data:
-  caddy_config:

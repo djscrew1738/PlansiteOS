@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const NotificationService = require('./NotificationService');
 const Lead = require('../models/Lead');
 const logger = require('../utils/logger');
-const { NOTIFICATIONS, CLEANUP } = require('../config/constants');
+const { NOTIFICATIONS: _NOTIFICATIONS, CLEANUP } = require('../config/constants');
 
 // ✅ FIXED: Use centralized database connection instead of creating new pool
 const db = require('../config/database');

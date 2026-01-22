@@ -493,7 +493,7 @@ Respond ONLY with the JSON object, no additional text.`;
             ]
           );
 
-          const roomId = roomResult.rows[0].id;
+          const _roomId = roomResult.rows[0].id;
 
           // Insert fixtures for this room
           for (const fixture of room.fixtures) {

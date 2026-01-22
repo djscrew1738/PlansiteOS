@@ -514,18 +514,13 @@ class LeadProcessingService {
    * ✅ UPDATED: Pass correlation ID to notification service
    */
   async sendNotifications(lead, corrId) {
-    try {
-      if (lead.ai_score >= AI.HIGH_PRIORITY_THRESHOLD) {
-        await NotificationService.sendHighPriorityAlert(lead);
+    if (lead.ai_score >= AI.HIGH_PRIORITY_THRESHOLD) {
+      await NotificationService.sendHighPriorityAlert(lead);
 
-        logger.info('High-priority notification sent', {
-          correlationId: corrId,
-          lead_id: lead.id
-        });
-      }
-    } catch (error) {
-      // Already logged in NotificationService
-      throw error;
+      logger.info('High-priority notification sent', {
+        correlationId: corrId,
+        lead_id: lead.id
+      });
     }
   }
 

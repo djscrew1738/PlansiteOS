@@ -5,7 +5,7 @@ try {
   createCanvas = canvas.createCanvas;
   loadImage = canvas.loadImage;
   canvasAvailable = true;
-} catch (error) {
+} catch (_error) {
   canvasAvailable = false;
   console.warn('Canvas module not available - blueprint annotation will be disabled');
 }
@@ -336,7 +336,7 @@ class BlueprintVisualizationService {
    * Draw legend in bottom right corner
    * @private
    */
-  async drawLegend(ctx, analysisData, _imageWidth, _imageHeight, opts) {
+  async drawLegend(ctx, analysisData, imageWidth, imageHeight, opts) {
     try {
       // Prepare legend content
       const legendItems = this.prepareLegendContent(analysisData);
@@ -472,7 +472,7 @@ class BlueprintVisualizationService {
    * Calculate scale factor from blueprint
    * @private
    */
-  calculateScale(summary, imageWidth, imageHeight) {
+  calculateScale(summary, _imageWidth, _imageHeight) {
     // Default scale: 1 inch = 10 pixels
     let scale = 10;
 

@@ -17,7 +17,7 @@ const logger = require('../utils/logger');
  * POST /api/blueprints/upload
  * Upload and analyze a blueprint
  */
-router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, next) => {
+router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _next) => {
   const corrId = correlationId.get();
   let blueprintId = null;
 
@@ -188,7 +188,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, nex
  * GET /api/blueprints/:id
  * Get blueprint analysis results
  */
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -243,7 +243,7 @@ router.get('/:id', async (req, res, next) => {
  * GET /api/blueprints
  * List all blueprints
  */
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -296,7 +296,7 @@ router.get('/', async (req, res, next) => {
  * DELETE /api/blueprints/:id
  * Delete a blueprint
  */
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -368,7 +368,7 @@ router.delete('/:id', async (req, res, next) => {
  * GET /api/blueprints/:id/summary
  * Get fixture summary for a blueprint
  */
-router.get('/:id/summary', async (req, res, next) => {
+router.get('/:id/summary', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {
@@ -446,7 +446,7 @@ router.get('/:id/summary', async (req, res, next) => {
  * POST /api/blueprints/:id/annotate
  * Generate annotated blueprint with dimension lines
  */
-router.post('/:id/annotate', async (req, res, next) => {
+router.post('/:id/annotate', async (req, res, _next) => {
   const corrId = correlationId.get();
 
   try {

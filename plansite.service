@@ -1,0 +1,18 @@
+[Unit]
+Description=PlansiteOS Blueprint Takeoff Platform
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/home/PlansiteOS
+ExecStart=/usr/bin/docker compose -f docker-compose.prod.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
+ExecReload=/usr/bin/docker compose -f docker-compose.prod.yml up -d --remove-orphans
+User=home
+Group=docker
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -274,7 +274,7 @@ router.delete('/:id/line-items/:lineItemId', asyncHandler(async (req, res) => {
 // Error Handler
 // ============================================================================
 
-router.use((err, req, res, next) => {
+router.use((err, req, res, _next) => {
   const corrId = correlationId.get();
 
   // Handle known errors

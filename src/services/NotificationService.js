@@ -1,7 +1,7 @@
 const twilio = require('twilio');
 const logger = require('../utils/logger');
 const CircuitBreaker = require('../utils/CircuitBreaker');
-const { NOTIFICATIONS } = require('../config/constants');
+const { NOTIFICATIONS: _NOTIFICATIONS } = require('../config/constants');
 
 class NotificationService {
   constructor() {

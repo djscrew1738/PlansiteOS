@@ -32,7 +32,7 @@ Please identify and count ALL plumbing fixtures, providing the following informa
 
 Return your analysis in the following JSON format:
 
-```json
+\`\`\`json
 {
   "summary": {
     "totalFixtures": <number>,
@@ -83,7 +83,7 @@ Return your analysis in the following JSON format:
   },
   "notes": "Any additional observations about the blueprint"
 }
-```
+\`\`\`
 
 Be thorough and accurate. If measurements are not clearly visible, estimate based on standard fixture sizes and note that they are estimates. If you cannot determine something, indicate "unknown" or "not visible".
 
