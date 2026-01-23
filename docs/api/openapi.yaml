@@ -1,0 +1,706 @@
+openapi: 3.0.3
+info:
+  title: PlansiteOS API
+  description: |
+    AI-powered blueprint takeoff and estimation platform for plumbing contractors.
+
+    ## Features
+    - Upload and analyze plumbing blueprints
+    - AI-powered fixture detection using Claude 3.5 Sonnet
+    - Automated fixture counting and room classification
+    - Generate annotated blueprints with dimension lines
+
+    ## Authentication
+    Currently no authentication is required (development mode).
+    Future versions will require API keys or OAuth tokens.
+
+  version: 2.0.0
+  contact:
+    name: CTL Plumbing LLC
+    email: admin@ctlplumbingllc.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://ctlplumbingllc.com
+    description: Production server
+
+tags:
+  - name: blueprints
+    description: Blueprint upload, analysis, and management
+  - name: health
+    description: Service health and status
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check endpoint
+      description: Returns the health status of the API and its dependencies
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                    description: Uptime in seconds
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [connected, disconnected]
+                      ai:
+                        type: string
+                        enum: [configured, not_configured]
+
+  /api/blueprints/upload:
+    post:
+      tags:
+        - blueprints
+      summary: Upload and analyze a blueprint
+      description: |
+        Upload a plumbing blueprint file and automatically analyze it using AI to detect:
+        - Rooms and their types
+        - Plumbing fixtures and quantities
+        - Fixture locations and connections
+
+        The analysis runs synchronously and may take 30-120 seconds depending on blueprint complexity.
+
+      operationId: uploadBlueprint
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - blueprint
+              properties:
+                blueprint:
+                  type: string
+                  format: binary
+                  description: Blueprint file (PDF, PNG, or JPEG)
+                projectName:
+                  type: string
+                  description: Name of the project
+                  example: "North Dallas Residential Complex"
+                  maxLength: 255
+                projectAddress:
+                  type: string
+                  description: Project address
+                  example: "123 Main St, Dallas, TX 75001"
+                  maxLength: 500
+
+      responses:
+        '201':
+          description: Blueprint uploaded and analyzed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlueprintUploadResponse'
+
+        '400':
+          description: Bad request (missing file, invalid format, validation failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                no_file:
+                  value:
+                    error:
+                      message: "No file uploaded"
+                      code: "NO_FILE"
+                      correlationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                validation_failed:
+                  value:
+                    error:
+                      message: "File validation failed"
+                      code: "VALIDATION_FAILED"
+                      errors:
+                        - "File too large (max 200MB)"
+                      correlationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+        '500':
+          description: Server error (analysis failed, database error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/blueprints/{id}:
+    get:
+      tags:
+        - blueprints
+      summary: Get blueprint analysis results
+      description: Retrieve complete analysis results for a previously uploaded blueprint
+      operationId: getBlueprint
+      parameters:
+        - $ref: '#/components/parameters/BlueprintId'
+      responses:
+        '200':
+          description: Blueprint found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlueprintDetails'
+
+        '400':
+          description: Invalid blueprint ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Blueprint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - blueprints
+      summary: Delete a blueprint
+      description: Delete a blueprint and its associated file from the system
+      operationId: deleteBlueprint
+      parameters:
+        - $ref: '#/components/parameters/BlueprintId'
+      responses:
+        '200':
+          description: Blueprint deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  correlationId:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+                    example: "Blueprint deleted successfully"
+
+        '404':
+          description: Blueprint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/blueprints:
+    get:
+      tags:
+        - blueprints
+      summary: List all blueprints
+      description: Get a paginated list of all blueprints in the system
+      operationId: listBlueprints
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of results per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: List of blueprints
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  correlationId:
+                    type: string
+                    format: uuid
+                  blueprints:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BlueprintListItem'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/blueprints/{id}/summary:
+    get:
+      tags:
+        - blueprints
+      summary: Get fixture summary
+      description: Get aggregated fixture counts and room-by-room breakdown
+      operationId: getBlueprintSummary
+      parameters:
+        - $ref: '#/components/parameters/BlueprintId'
+      responses:
+        '200':
+          description: Summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  correlationId:
+                    type: string
+                    format: uuid
+                  blueprint:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      projectName:
+                        type: string
+                      totalFixtures:
+                        type: integer
+                      status:
+                        type: string
+                  fixtureTotals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fixture_type:
+                          type: string
+                        total_quantity:
+                          type: integer
+                  fixturesByRoom:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        room_name:
+                          type: string
+                        fixture_type:
+                          type: string
+                        total_quantity:
+                          type: integer
+
+        '404':
+          description: Blueprint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/blueprints/{id}/annotate:
+    post:
+      tags:
+        - blueprints
+      summary: Generate annotated blueprint
+      description: |
+        Create an annotated version of the blueprint with:
+        - Fixture locations marked
+        - Dimension lines
+        - Room labels
+        - Fixture count overlays
+
+      operationId: annotateBlu eprint
+      parameters:
+        - $ref: '#/components/parameters/BlueprintId'
+      responses:
+        '200':
+          description: Annotated blueprint generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  correlationId:
+                    type: string
+                    format: uuid
+                  annotatedImagePath:
+                    type: string
+                    description: Path to the generated annotated image
+                    example: "/storage/uploads/annotated/blueprint_123_annotated.png"
+                  message:
+                    type: string
+                    example: "Annotated blueprint generated successfully"
+
+        '404':
+          description: Blueprint not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Annotation generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    BlueprintId:
+      name: id
+      in: path
+      description: Blueprint ID
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - message
+            - code
+          properties:
+            message:
+              type: string
+              description: Human-readable error message
+            code:
+              type: string
+              description: Machine-readable error code
+              enum:
+                - NO_FILE
+                - VALIDATION_FAILED
+                - INVALID_ID
+                - NOT_FOUND
+                - ANALYSIS_FAILED
+                - FETCH_FAILED
+                - LIST_FAILED
+                - DELETE_FAILED
+                - SUMMARY_FAILED
+                - ANNOTATION_FAILED
+            correlationId:
+              type: string
+              format: uuid
+              description: Request correlation ID for tracking
+            details:
+              type: string
+              description: Additional error details
+            errors:
+              type: array
+              description: List of validation errors
+              items:
+                type: string
+
+    BlueprintUploadResponse:
+      type: object
+      required:
+        - success
+        - correlationId
+        - blueprint
+        - analysis
+      properties:
+        success:
+          type: boolean
+          example: true
+        correlationId:
+          type: string
+          format: uuid
+        blueprint:
+          type: object
+          required:
+            - id
+            - projectName
+            - fileName
+            - fileSize
+            - status
+          properties:
+            id:
+              type: integer
+              example: 123
+            projectName:
+              type: string
+              example: "North Dallas Residential Complex"
+            projectAddress:
+              type: string
+              nullable: true
+              example: "123 Main St, Dallas, TX 75001"
+            fileName:
+              type: string
+              example: "floor-plan-revised.pdf"
+            fileSize:
+              type: integer
+              description: File size in bytes
+              example: 2547896
+            status:
+              type: string
+              enum: [pending, processing, completed, failed]
+              example: "completed"
+        analysis:
+          type: object
+          properties:
+            totalFixtures:
+              type: integer
+              example: 42
+            totalRooms:
+              type: integer
+              example: 12
+            fixtureTotals:
+              type: object
+              description: Fixture counts by type
+              example:
+                toilet: 8
+                sink: 12
+                shower: 6
+                bathtub: 4
+                dishwasher: 2
+                water_heater: 2
+                washing_machine: 2
+                hose_bibb: 6
+            rooms:
+              type: array
+              items:
+                $ref: '#/components/schemas/Room'
+            analysisTime:
+              type: number
+              description: Analysis duration in seconds
+              example: 45.2
+
+    BlueprintDetails:
+      type: object
+      properties:
+        success:
+          type: boolean
+        correlationId:
+          type: string
+          format: uuid
+        blueprint:
+          type: object
+          properties:
+            id:
+              type: integer
+            projectName:
+              type: string
+            projectAddress:
+              type: string
+              nullable: true
+            fileName:
+              type: string
+            fileSize:
+              type: integer
+            filePath:
+              type: string
+            status:
+              type: string
+              enum: [pending, processing, completed, failed]
+            totalFixtures:
+              type: integer
+              nullable: true
+            errorMessage:
+              type: string
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            analysisStartedAt:
+              type: string
+              format: date-time
+              nullable: true
+            analysisCompletedAt:
+              type: string
+              format: date-time
+              nullable: true
+            analysisData:
+              type: object
+              description: Full AI analysis results
+              properties:
+                summary:
+                  type: object
+                rooms:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Room'
+
+    BlueprintListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectName:
+          type: string
+        projectAddress:
+          type: string
+          nullable: true
+        fileName:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        totalFixtures:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        analysisCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Room:
+      type: object
+      required:
+        - name
+        - type
+        - fixtures
+      properties:
+        name:
+          type: string
+          description: Room identifier
+          example: "Bathroom 1"
+        type:
+          type: string
+          description: Room classification
+          enum:
+            - bathroom
+            - kitchen
+            - laundry
+            - utility
+            - exterior
+            - mechanical
+            - other
+          example: "bathroom"
+        level:
+          type: string
+          description: Floor level
+          example: "1st Floor"
+        fixtures:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fixture'
+        notes:
+          type: string
+          description: Additional observations about the room
+          example: "Master bathroom with dual sinks"
+
+    Fixture:
+      type: object
+      required:
+        - type
+        - quantity
+      properties:
+        type:
+          type: string
+          description: Fixture type
+          enum:
+            - toilet
+            - sink
+            - lavatory
+            - shower
+            - bathtub
+            - dishwasher
+            - water_heater
+            - washing_machine
+            - utility_sink
+            - hose_bibb
+            - floor_drain
+            - other
+          example: "toilet"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        details:
+          type: string
+          description: Additional fixture details
+          example: "Wall-mounted, ADA compliant"
+        location:
+          type: string
+          description: Specific location within room
+          example: "Northwest corner"
+
+    Pagination:
+      type: object
+      required:
+        - page
+        - limit
+        - totalCount
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Current page number (1-indexed)
+          example: 1
+        limit:
+          type: integer
+          description: Results per page
+          example: 20
+        totalCount:
+          type: integer
+          description: Total number of blueprints
+          example: 47
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 3
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication (future feature)
+
+# Security is not currently enforced
+# security:
+#   - ApiKeyAuth: []
