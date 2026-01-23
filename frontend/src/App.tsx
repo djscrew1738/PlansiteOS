@@ -1,26 +1,21 @@
-import { Route, Routes, Link } from 'react-router-dom';
-import NewProjectPage from './pages/NewProjectPage';
-import ProjectPage from './pages/ProjectPage';
-import UploadPage from './pages/UploadPage';
-import PageViewer from './pages/PageViewer';
+import { Routes, Route } from 'react-router-dom';
+import Layout from './components/layout/Layout';
+import Dashboard from './pages/Dashboard';
+import Blueprints from './pages/Blueprints';
+import Estimates from './pages/Estimates';
+import Leads from './pages/Leads';
+import Messages from './pages/Messages';
 
 export default function App() {
   return (
-    <div className="app-shell">
-      <header>
-        <h1>Blueprint Upload Foundation</h1>
-        <nav>
-          <Link to="/projects/new" style={{ color: '#fff' }}>New Project</Link>
-        </nav>
-      </header>
-      <main>
-        <Routes>
-          <Route path="/projects/new" element={<NewProjectPage />} />
-          <Route path="/projects/:projectId" element={<ProjectPage />} />
-          <Route path="/uploads/:uploadId" element={<UploadPage />} />
-          <Route path="/pages/:pageId" element={<PageViewer />} />
-        </Routes>
-      </main>
-    </div>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/blueprints" element={<Blueprints />} />
+        <Route path="/estimates" element={<Estimates />} />
+        <Route path="/leads" element={<Leads />} />
+        <Route path="/messages" element={<Messages />} />
+      </Routes>
+    </Layout>
   );
 }

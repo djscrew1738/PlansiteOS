@@ -1,111 +1,65 @@
-:root {
-  font-family: 'Inter', system-ui, sans-serif;
-  color: #1a1a1a;
-  background: #f6f7fb;
+@import "tailwindcss";
+
+@theme {
+  --color-slate-950: #020617;
+}
+
+* {
+  border-color: theme(colors.slate.800);
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
+  @apply bg-slate-950 text-slate-100 antialiased;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+#root {
+  @apply min-h-screen;
 }
 
-header {
-  padding: 16px 24px;
-  background: #0f1a2b;
-  color: #fff;
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-main {
-  flex: 1;
-  padding: 16px;
+::-webkit-scrollbar-track {
+  @apply bg-slate-950;
 }
 
-.card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  margin-bottom: 16px;
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-700 rounded-full;
 }
 
-.button {
-  background: #2f6fed;
-  color: #fff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-600;
 }
 
-.input {
-  padding: 8px 12px;
-  border: 1px solid #d0d4dc;
-  border-radius: 8px;
-  width: 100%;
-  margin-bottom: 8px;
+/* Animation utilities */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.upload-drop {
-  border: 2px dashed #8aa4ff;
-  border-radius: 12px;
-  padding: 24px;
-  text-align: center;
-  background: #f0f4ff;
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.layout {
-  display: flex;
-  gap: 16px;
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
 }
 
-.sidebar {
-  width: 160px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 8px;
-  overflow-y: auto;
-  max-height: 80vh;
-}
-
-.viewer {
-  flex: 1;
-  background: #fff;
-  border-radius: 12px;
-  padding: 8px;
-}
-
-.thumb {
-  width: 100%;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  border: 2px solid transparent;
-}
-
-.thumb.active {
-  border-color: #2f6fed;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 24px;
-  border-radius: 12px;
-  width: 320px;
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
 }
