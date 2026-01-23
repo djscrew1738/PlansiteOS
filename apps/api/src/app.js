@@ -19,19 +19,18 @@ app.use((req, res, next) => {
   const domain = process.env.DOMAIN || 'cbrnholdings.com';
 
   const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:5000',
-    `http://${localIP}:3000`,
-    `http://${localIP}:5000`,
-    `http://${tailscaleIP}:3000`,
-    `http://${tailscaleIP}:5000`,
+    'http://localhost:5173',
+    'http://localhost:8090',
+    `http://${localIP}:5173`,
+    `http://${localIP}:8090`,
+    `http://${tailscaleIP}:5173`,
+    `http://${tailscaleIP}:8090`,
     `https://${domain}`,
     `https://www.${domain}`,
     // Legacy domains
     'https://ctlplumbingllc.com',
     'https://www.ctlplumbingllc.com',
+    'https://app.ctlplumbingllc.com',
     // Custom CORS origins from env
     ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : []),
     process.env.DOMAIN_URL

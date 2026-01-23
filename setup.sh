@@ -18,7 +18,7 @@ DB_USER="postgres"
 DB_PASSWORD="postgres"
 DB_HOST="localhost"
 DB_PORT="5432"
-API_PORT="5000"
+API_PORT="8090"
 
 # Network Configuration
 LOCAL_IP="192.168.1.215"
@@ -164,7 +164,7 @@ UPLOAD_DIR=./uploads/blueprints
 MAX_FILE_SIZE_MB=50
 
 # CORS Configuration
-CORS_ORIGIN=http://localhost:3000,http://${LOCAL_IP}:3000,http://${TAILSCALE_IP}:3000,https://${DOMAIN}
+CORS_ORIGIN=http://localhost:5173,http://${LOCAL_IP}:5173,http://${TAILSCALE_IP}:5173,https://${DOMAIN}
 
 # Optional API Keys (uncomment and add your keys)
 # ANTHROPIC_API_KEY=sk-ant-your-key-here
@@ -240,10 +240,10 @@ if ! check_port $API_PORT; then
     sleep 1
 fi
 
-if ! check_port 3000; then
-    print_warning "Port 3000 is already in use"
+if ! check_port 5173; then
+    print_warning "Port 5173 is already in use"
     print_warning "Attempting to kill existing process..."
-    sudo lsof -ti:3000 | xargs -r sudo kill -9
+    sudo lsof -ti:5173 | xargs -r sudo kill -9
     sleep 1
 fi
 
@@ -299,9 +299,9 @@ echo -e "${GREEN}║     PlansiteOS Successfully Started!  ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Access URLs:${NC}"
-echo -e "  Local:     ${BLUE}http://localhost:3000${NC}"
-echo -e "  Network:   ${BLUE}http://${LOCAL_IP}:3000${NC}"
-echo -e "  Tailscale: ${BLUE}http://${TAILSCALE_IP}:3000${NC}"
+echo -e "  Local:     ${BLUE}http://localhost:5173${NC}"
+echo -e "  Network:   ${BLUE}http://${LOCAL_IP}:5173${NC}"
+echo -e "  Tailscale: ${BLUE}http://${TAILSCALE_IP}:5173${NC}"
 echo ""
 echo -e "${YELLOW}API Endpoints:${NC}"
 echo -e "  Local:     ${BLUE}http://localhost:${API_PORT}/api/v1${NC}"
