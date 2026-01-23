@@ -138,7 +138,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./apps/web
       dockerfile: Dockerfile
       args:
         VITE_API_BASE: ${VITE_API_BASE}
