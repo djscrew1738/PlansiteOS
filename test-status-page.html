@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Status Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f4f4f4; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>System Status API Test</h1>
+    <div id="result">Loading...</div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+
+            try {
+                // Test 1: Direct API call
+                resultDiv.innerHTML += '<h2>Test 1: Direct API Call</h2>';
+                const response = await fetch('http://100.109.158.92:8099/api/status');
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML += '<p class="success">✅ API is working!</p>';
+                    resultDiv.innerHTML += '<pre>' + JSON.stringify(data.data.overall, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML += '<p class="error">❌ API returned error</p>';
+                }
+
+                // Test 2: Relative path (like the app uses)
+                resultDiv.innerHTML += '<h2>Test 2: Relative Path API Call</h2>';
+                const response2 = await fetch('/api/status');
+                const data2 = await response2.json();
+
+                if (data2.success) {
+                    resultDiv.innerHTML += '<p class="success">✅ Relative API path is working!</p>';
+                } else {
+                    resultDiv.innerHTML += '<p class="error">❌ Relative path failed</p>';
+                }
+
+                // Test 3: Check if React app loads
+                resultDiv.innerHTML += '<h2>Test 3: Frontend Route</h2>';
+                resultDiv.innerHTML += '<p>Navigate to <a href="/status">/status</a> to test React route</p>';
+
+            } catch (error) {
+                resultDiv.innerHTML += '<p class="error">❌ Error: ' + error.message + '</p>';
+            }
+        }
+
+        testAPI();
+    </script>
+</body>
+</html>
