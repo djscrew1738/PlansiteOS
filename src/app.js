@@ -5,6 +5,7 @@ const path = require('path');
 const logger = require('./utils/logger');
 const { correlationIdMiddleware } = require('./middleware/correlationId');
 const db = require('./config/database');
+const systemStatus = require('./services/SystemStatusService');
 
 // Create Express app
 const app = express();
@@ -44,35 +45,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(correlationIdMiddleware());
 
-// Health check endpoint
+// Health check endpoint (simple)
 app.get('/api/health', async (req, res) => {
-  const health = {
-    timestamp: new Date().toISOString(),
-    status: 'healthy',
-    services: {}
-  };
-
-  // Check database
   try {
-    await db.query('SELECT 1');
-    health.services.database = { healthy: true };
+    const status = await systemStatus.getSystemStatus();
+    const statusCode = status.overall === 'healthy' ? 200 : 503;
+
+    res.status(statusCode).json({
+      status: status.overall,
+      timestamp: status.timestamp,
+      uptime: status.services.api.uptimeHuman,
+      services: {
+        database: status.services.database.status,
+        ai: status.services.ai.status,
+        blueprints: status.services.blueprints.status
+      }
+    });
   } catch (error) {
-    health.services.database = { healthy: false, error: error.message };
-    health.status = 'unhealthy';
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
   }
-
-  // Check AI service
-  const aiInitialized = !!process.env.ANTHROPIC_API_KEY;
-  health.services.ai = { initialized: aiInitialized };
-  if (!aiInitialized) {
-    health.status = 'degraded';
-  }
-
-  // Check blueprints service
-  health.services.blueprints = { initialized: true };
-
-  const statusCode = health.status === 'healthy' ? 200 : 503;
-  res.status(statusCode).json(health);
 });
 
 // API Routes
@@ -82,6 +77,17 @@ try {
   logger.info('Blueprint routes loaded');
 } catch (error) {
   logger.error('Failed to load blueprint routes', {
+    error: error.message,
+    stack: error.stack
+  });
+}
+
+try {
+  const statusRouter = require('./routes/status');
+  app.use('/api/status', statusRouter);
+  logger.info('Status routes loaded');
+} catch (error) {
+  logger.error('Failed to load status routes', {
     error: error.message,
     stack: error.stack
   });
@@ -119,6 +125,21 @@ app.use((err, req, res, _next) => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
 
+  // Stop status monitoring
+  systemStatus.stopMonitoring();
+
+  await db.end();
+  logger.info('Database connections closed');
+
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+
+  // Stop status monitoring
+  systemStatus.stopMonitoring();
+
   await db.end();
   logger.info('Database connections closed');
 
@@ -127,8 +148,8 @@ process.on('SIGTERM', async () => {
 
 // Start server
 if (require.main === module) {
-  app.listen(PORT, HOST, () => {
-    logger.info(`PipelineOS server started`, {
+  app.listen(PORT, HOST, async () => {
+    logger.info(`PlansiteOS server started`, {
       port: PORT,
       host: HOST,
       tailscaleIp: process.env.TAILSCALE_IP || '100.109.158.92',
@@ -137,11 +158,34 @@ if (require.main === module) {
       nodeVersion: process.version
     });
 
+    // Start system status monitoring
+    systemStatus.startMonitoring(30000); // Check every 30 seconds
+
+    // Perform initial health check
+    try {
+      const initialStatus = await systemStatus.getSystemStatus();
+      logger.info('Initial system status check complete', {
+        overall: initialStatus.overall,
+        database: initialStatus.services.database.status,
+        ai: initialStatus.services.ai.status,
+        blueprints: initialStatus.services.blueprints.status
+      });
+    } catch (error) {
+      logger.error('Initial system status check failed', { error: error.message });
+    }
+
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('  PlansiteOS API Server');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('\n🚀 Server Access URLs:');
     console.log(`   Local:     http://localhost:${PORT}`);
     console.log(`   Tailscale: http://${process.env.TAILSCALE_IP || '100.109.158.92'}:${PORT}`);
     console.log(`   Domain:    https://${process.env.DOMAIN || 'ctlplumbingllc.com'}:${PORT}`);
-    console.log('');
+    console.log('\n📊 Status Endpoints:');
+    console.log(`   Health:    http://localhost:${PORT}/api/health`);
+    console.log(`   Status:    http://localhost:${PORT}/api/status`);
+    console.log(`   Metrics:   http://localhost:${PORT}/api/status/metrics`);
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   });
 }
 
