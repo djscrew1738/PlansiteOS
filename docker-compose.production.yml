@@ -1,0 +1,139 @@
+version: '3.9'
+
+# PlansiteOS Production Deployment - Current Architecture
+# Uses Node.js backend from /src
+# Usage: docker compose -f docker-compose.production.yml up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: plansite-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: plansite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: plansite
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plansite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - plansite_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: plansite-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - plansite_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # Node.js API Backend
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plansite-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://plansite:${POSTGRES_PASSWORD}@postgres:5432/plansite
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CORS_ORIGIN: https://app.ctlplumbingllc.com,https://ctlplumbingllc.com
+      DOMAIN: ctlplumbingllc.com
+      LOG_LEVEL: info
+      UPLOAD_DIR: /app/storage/uploads
+      UPLOAD_MAX_BYTES: 209715200
+    volumes:
+      - upload_data:/app/storage/uploads
+      - ./logs:/app/logs
+    ports:
+      - "127.0.0.1:5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - plansite_network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Caddy Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: plansite-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile.production:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./logs/caddy:/var/log/caddy
+    networks:
+      - plansite_network
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  plansite_network:
+    driver: bridge
+    name: plansite_network
+
+volumes:
+  postgres_data:
+    name: plansite_postgres_data
+  redis_data:
+    name: plansite_redis_data
+  upload_data:
+    name: plansite_upload_data
+  caddy_data:
+    name: plansite_caddy_data
+  caddy_config:
+    name: plansite_caddy_config
