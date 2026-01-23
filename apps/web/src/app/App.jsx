@@ -14,6 +14,10 @@ import SystemStatus from '../pages/SystemStatus';
 function App() {
   return (
     <Routes>
+      {/* Standalone routes (no tab layout) */}
+      <Route path="/status" element={<SystemStatus />} />
+
+      {/* Main app with tab layout */}
       <Route path="/" element={<TabbedLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="messages" element={<Messages />} />
@@ -23,7 +27,6 @@ function App() {
         <Route path="estimates/:id" element={<BidDetail />} />
         <Route path="leads" element={<Leads />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="status" element={<SystemStatus />} />
         {/* Legacy redirects */}
         <Route path="bids/*" element={<Navigate to="/estimates" replace />} />
         <Route path="material" element={<Navigate to="/leads" replace />} />
