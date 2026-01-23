@@ -9,7 +9,7 @@ app.ctlplumbingllc.com {
 
   # API routes - proxy to backend
   @api path /api/*
-  reverse_proxy @api localhost:5000 {
+  reverse_proxy @api localhost:8090 {
     header_up X-Real-IP {remote_host}
     header_up X-Forwarded-For {remote_host}
     header_up X-Forwarded-Proto {scheme}
@@ -17,7 +17,7 @@ app.ctlplumbingllc.com {
 
   # Health check endpoint
   @health path /health
-  reverse_proxy @health localhost:5000
+  reverse_proxy @health localhost:8090
 
   # Frontend - proxy to Vite preview or built static files
   # Option 1: Proxy to running frontend server

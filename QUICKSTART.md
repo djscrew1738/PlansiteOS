@@ -60,7 +60,7 @@ You should see:
 ```
 PlansiteOS API Server
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ Server running on port 5000
+✓ Server running on port 8090
 ✓ Database connected
 ✓ AI service: configured
 ```
@@ -89,8 +89,8 @@ VITE ready in XXX ms
 ### Step 5: Access the App
 
 **Frontend:** http://localhost:5173/
-**API:** http://localhost:5000/
-**Health Check:** http://localhost:5000/health
+**API:** http://localhost:8090/
+**Health Check:** http://localhost:8090/health
 
 ---
 
@@ -141,7 +141,7 @@ cp .env.example .env
 Edit `.env`:
 ```bash
 NODE_ENV=development
-PORT=5000
+PORT=8090
 DATABASE_URL=postgresql://plansite:plansite@localhost:5432/plansite
 REDIS_URL=redis://localhost:6379/0
 ANTHROPIC_API_KEY=sk-ant-your-actual-key-here
@@ -188,8 +188,8 @@ npm run dev
   - Fixture visualization
 
 ### Backend API (Node.js)
-- **URL:** http://localhost:5000
-- **Health Check:** http://localhost:5000/health
+- **URL:** http://localhost:8090
+- **Health Check:** http://localhost:8090/health
 - **API Docs:** See `docs/api/openapi.yaml`
 
 ### Key Endpoints
@@ -208,16 +208,16 @@ npm run dev
 
 ```bash
 # Health check
-curl http://localhost:5000/health
+curl http://localhost:8090/health
 
 # Upload a blueprint (replace with actual PDF path)
-curl -X POST http://localhost:5000/api/blueprints/upload \
+curl -X POST http://localhost:8090/api/blueprints/upload \
   -F "blueprint=@/path/to/blueprint.pdf" \
   -F "projectName=Test Project" \
   -F "projectAddress=123 Main St"
 
 # List blueprints
-curl http://localhost:5000/api/blueprints
+curl http://localhost:8090/api/blueprints
 ```
 
 ### Using the Frontend
@@ -254,19 +254,19 @@ nano .env
 # Add: ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
-### "Port 5000 already in use"
+### "Port 8090 already in use"
 ```bash
 # Change port in .env
 PORT=5001
 
 # Or kill existing process
-lsof -ti:5000 | xargs kill -9
+lsof -ti:8090 | xargs kill -9
 ```
 
 ### Frontend can't connect to API
 ```bash
 # Check API is running
-curl http://localhost:5000/health
+curl http://localhost:8090/health
 
 # Check CORS settings in .env
 CORS_ORIGIN=http://localhost:5173

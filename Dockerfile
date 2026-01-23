@@ -35,11 +35,11 @@ RUN mkdir -p /app/storage/uploads && \
 USER node
 
 # Expose port
-EXPOSE 5000
+EXPOSE 8090
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:8090/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start application
 CMD ["node", "src/app.js"]

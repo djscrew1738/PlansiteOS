@@ -26,7 +26,7 @@ const SystemStatus: React.FC = () => {
 
   const fetchStatus = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+      const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8090';
       const response = await fetch(`${apiBase}/api/status`);
 
       if (!response.ok) {

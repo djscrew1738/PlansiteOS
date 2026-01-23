@@ -328,7 +328,7 @@ Add to `prometheus.yml`:
 scrape_configs:
   - job_name: 'plansiteos-api'
     static_configs:
-      - targets: ['localhost:5000']
+      - targets: ['localhost:8090']
     metrics_path: /api/status/metrics
     scrape_interval: 30s
 ```
@@ -365,10 +365,10 @@ groups:
 ./test-status-locally.sh
 
 # Test specific endpoint
-curl http://localhost:5000/api/status | jq '.'
+curl http://localhost:8090/api/status | jq '.'
 
 # Test health check
-curl http://localhost:5000/api/health
+curl http://localhost:8090/api/health
 ```
 
 ### Expected Results
@@ -515,7 +515,7 @@ psql $DATABASE_URL -c "SELECT id, error_message FROM blueprints WHERE status='fa
 ```nginx
 # Nginx upstream health check
 upstream plansiteos {
-  server localhost:5000;
+  server localhost:8090;
 }
 
 location /health {
@@ -528,7 +528,7 @@ location /health {
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
+  CMD curl -f http://localhost:8090/api/health || exit 1
 ```
 
 ### Kubernetes Liveness/Readiness
@@ -537,14 +537,14 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 livenessProbe:
   httpGet:
     path: /api/health
-    port: 5000
+    port: 8090
   initialDelaySeconds: 30
   periodSeconds: 10
 
 readinessProbe:
   httpGet:
     path: /api/status/quick
-    port: 5000
+    port: 8090
   initialDelaySeconds: 10
   periodSeconds: 5
 ```

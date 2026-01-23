@@ -47,7 +47,7 @@ Server Public IP
     ↓
 Caddy (Port 80/443) → Auto HTTPS
     ↓
-Backend API (Port 5000) → Node.js Express
+Backend API (Port 8090) → Node.js Express
     ↓
 PostgreSQL (Port 5432) + Redis (Port 6379)
 ```
@@ -211,7 +211,7 @@ chmod 600 .env.production
 
 Check `Caddyfile.production`:
 - Ensure domain matches: `app.ctlplumbingllc.com`
-- Ensure backend port matches: `localhost:5000`
+- Ensure backend port matches: `localhost:8090`
 
 ### 5.2 Important: Choose Frontend Serving Method
 
@@ -323,7 +323,7 @@ docker exec -i plansite-postgres psql -U plansite -d plansite < database/migrati
 
 ```bash
 # From the server
-curl http://localhost:5000/health
+curl http://localhost:8090/health
 ```
 
 Expected response:
@@ -597,7 +597,7 @@ docker compose -f docker-compose.production.yml restart caddy
 
 **Check API health:**
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:8090/health
 ```
 
 **Check API logs:**

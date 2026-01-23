@@ -9,7 +9,7 @@ const systemStatus = require('./services/SystemStatusService');
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8090;
 const HOST = process.env.HOST || '0.0.0.0'; // Listen on all interfaces
 
 // CORS Configuration

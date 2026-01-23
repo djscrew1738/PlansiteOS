@@ -19,7 +19,7 @@ The PlansiteOS API provides endpoints for:
 
 ## Base URLs
 
-- **Development:** `http://localhost:5000`
+- **Development:** `http://localhost:8090`
 - **Production:** `https://ctlplumbingllc.com`
 
 ## Authentication
@@ -117,7 +117,7 @@ npx redoc-cli serve openapi.yaml
 ### Upload a Blueprint
 
 ```bash
-curl -X POST http://localhost:5000/api/blueprints/upload \
+curl -X POST http://localhost:8090/api/blueprints/upload \
   -F "blueprint=@/path/to/blueprint.pdf" \
   -F "projectName=My Project" \
   -F "projectAddress=123 Main St"
@@ -126,31 +126,31 @@ curl -X POST http://localhost:5000/api/blueprints/upload \
 ### Get Blueprint Details
 
 ```bash
-curl http://localhost:5000/api/blueprints/123
+curl http://localhost:8090/api/blueprints/123
 ```
 
 ### List All Blueprints
 
 ```bash
-curl "http://localhost:5000/api/blueprints?page=1&limit=20"
+curl "http://localhost:8090/api/blueprints?page=1&limit=20"
 ```
 
 ### Delete a Blueprint
 
 ```bash
-curl -X DELETE http://localhost:5000/api/blueprints/123
+curl -X DELETE http://localhost:8090/api/blueprints/123
 ```
 
 ### Get Fixture Summary
 
 ```bash
-curl http://localhost:5000/api/blueprints/123/summary
+curl http://localhost:8090/api/blueprints/123/summary
 ```
 
 ### Generate Annotated Blueprint
 
 ```bash
-curl -X POST http://localhost:5000/api/blueprints/123/annotate
+curl -X POST http://localhost:8090/api/blueprints/123/annotate
 ```
 
 ## Request Examples (JavaScript)
@@ -163,7 +163,7 @@ const formData = new FormData();
 formData.append('blueprint', fileInput.files[0]);
 formData.append('projectName', 'My Project');
 
-const response = await fetch('http://localhost:5000/api/blueprints/upload', {
+const response = await fetch('http://localhost:8090/api/blueprints/upload', {
   method: 'POST',
   body: formData
 });
@@ -185,7 +185,7 @@ form.append('blueprint', fs.createReadStream('blueprint.pdf'));
 form.append('projectName', 'My Project');
 
 const response = await axios.post(
-  'http://localhost:5000/api/blueprints/upload',
+  'http://localhost:8090/api/blueprints/upload',
   form,
   { headers: form.getHeaders() }
 );
@@ -263,7 +263,7 @@ console.log(response.data);
 
 1. Import `openapi.yaml` into Postman
 2. Postman will auto-generate a collection
-3. Set environment variable `baseUrl` to `http://localhost:5000`
+3. Set environment variable `baseUrl` to `http://localhost:8090`
 4. Run requests
 
 ### Using cURL Scripts

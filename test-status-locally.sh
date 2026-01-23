@@ -5,7 +5,7 @@
 
 set -e
 
-API_URL="${API_URL:-http://localhost:5000}"
+API_URL="${API_URL:-http://localhost:8090}"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Testing PlansiteOS System Status"
