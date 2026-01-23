@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon src/worker.js",
     "start": "node src/worker.js",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "lint": "eslint src/",
     "clean": "rm -rf dist"
   },

@@ -6,7 +6,6 @@ import type {
   Project,
   ProjectCreate,
   Upload,
-  Page,
   Calibration,
   CalibrationCreate,
   HealthResponse,

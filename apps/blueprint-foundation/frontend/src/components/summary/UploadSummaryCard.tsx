@@ -8,13 +8,9 @@ import { QualityBadge } from './QualityBadge'
 
 interface UploadSummaryCardProps {
   summary: UploadSummary
-  showProjectLink?: boolean
 }
 
-export const UploadSummaryCard: React.FC<UploadSummaryCardProps> = ({
-  summary,
-  showProjectLink = false,
-}) => {
+export const UploadSummaryCard: React.FC<UploadSummaryCardProps> = ({ summary }) => {
   const navigate = useNavigate()
 
   const statusColor = {

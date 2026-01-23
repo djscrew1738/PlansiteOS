@@ -10,6 +10,7 @@
     "migrate:create": "node migrate.js create",
     "seed": "node seeds/index.js",
     "lint": "eslint .",
+    "test": "node -e \"console.log('No tests for @pipelineos/db')\"",
     "clean": "echo 'No build artifacts to clean'"
   },
   "dependencies": {

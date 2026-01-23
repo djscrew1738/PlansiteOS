@@ -1,7 +1,6 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import BASE_URL from './baseUrl';
 
 const client = axios.create({
   baseURL: BASE_URL,
@@ -26,10 +25,10 @@ client.interceptors.request.use(
 client.interceptors.response.use(
   response => response.data,
   error => {
-    const message = error.response?.data?.error || error.message || 'An error occurred';
-
-    // Don't show toast for 404s on optional data
-    if (error.response?.status !== 404) {
+    // Only show toast if we got an actual response from the server
+    // Don't show errors for network failures (backend not running)
+    if (error.response && error.response.status !== 404) {
+      const message = error.response?.data?.error || error.message || 'An error occurred';
       toast.error(message);
     }
 

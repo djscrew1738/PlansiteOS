@@ -1,6 +1,10 @@
 node_modules/
 frontend/dist/
+apps/web/dist/
+apps/blueprint-foundation/frontend/dist/
 __pycache__/
 *.pyc
 .env
 .venv/
+apps/api/src/logs/
+docs/plans/

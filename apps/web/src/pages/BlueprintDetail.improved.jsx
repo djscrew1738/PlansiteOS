@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import BASE_URL from '../api/baseUrl';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, FileText, MapPin, Calendar, Download, AlertTriangle, Scale, Ruler, Layers, Settings2, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api/client';
@@ -145,7 +146,7 @@ export default function BlueprintDetail() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Blueprint Visual</h2>
             {blueprint.file_path ? (
               <BlueprintImageViewer
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${blueprint.file_path.replace(/^\./, '')}`}
+                src={`${BASE_URL}${blueprint.file_path.replace(/^\./, '')}`}
                 projectName={blueprint.project_name}
                 analysisData={analysisData}
                 fileType={blueprint.file_type}
