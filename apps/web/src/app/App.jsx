@@ -9,6 +9,7 @@ import BidDetail from '../pages/BidDetail';
 import Material from '../pages/Material';
 import Leads from '../pages/Leads';
 import Settings from '../pages/Settings';
+import SystemStatus from '../pages/SystemStatus';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="estimates/:id" element={<BidDetail />} />
         <Route path="leads" element={<Leads />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="status" element={<SystemStatus />} />
         {/* Legacy redirects */}
         <Route path="bids/*" element={<Navigate to="/estimates" replace />} />
         <Route path="material" element={<Navigate to="/leads" replace />} />

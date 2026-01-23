@@ -48,9 +48,11 @@ app.use(correlationIdMiddleware());
 
 // API Routes
 const healthRoutes = require('./routes/health.routes');
+const statusRoutes = require('./routes/status.routes');
 const v1Routes = require('./routes/v1');
 
 app.use('/api/health', healthRoutes);
+app.use('/api/status', statusRoutes);
 app.use('/api/v1', v1Routes);
 
 // Legacy route for backwards compatibility
