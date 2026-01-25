@@ -23,9 +23,9 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:5000
+  - url: http://localhost:8090
     description: Development server
-  - url: https://ctlplumbingllc.com
+  - url: https://app.ctlplumbingllc.com
     description: Production server
 
 tags:

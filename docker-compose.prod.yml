@@ -163,7 +163,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       CORS_ORIGIN: ${CORS_ORIGIN}
       NODE_ENV: production
-      PORT: 5001
+      PORT: 8090
       DOMAIN: ${DOMAIN}
       TAILSCALE_IP: ${TAILSCALE_IP}
       UPLOAD_PATH: /app/uploads
@@ -178,7 +178,7 @@ services:
       - backend
       - frontend
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8090/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5

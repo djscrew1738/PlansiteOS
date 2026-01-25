@@ -18,7 +18,7 @@ open http://localhost:3000
 
 **Access:**
 - Web: http://localhost:3000
-- API: http://localhost:5001/api
+- API: http://localhost:8090/api
 - MinIO: http://localhost:9001
 
 ---
@@ -87,8 +87,8 @@ docker compose -f docker-compose.prod.yml exec postgres \
 
 **Port in use:**
 ```bash
-sudo lsof -i :5001
-sudo kill $(sudo lsof -t -i:5001)
+sudo lsof -i :8090
+sudo kill $(sudo lsof -t -i:8090)
 ```
 
 **Database issues:**
