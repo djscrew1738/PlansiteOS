@@ -17,6 +17,7 @@ app.use((req, res, next) => {
     'http://localhost:3000',
     'http://localhost:3002',
     'http://localhost:5001',
+    'http://localhost:8090',
     'http://100.109.158.92:8099',
     'https://ctlplumbingllc.com',
     'https://www.ctlplumbingllc.com',
@@ -25,7 +26,12 @@ app.use((req, res, next) => {
   ].filter(Boolean);
 
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin) || !origin) {
+
+  // Allow all localhost origins in development
+  const isLocalhost = origin && origin.match(/^http:\/\/localhost:\d+$/);
+  const isAllowed = allowedOrigins.includes(origin) || isLocalhost;
+
+  if (isAllowed || !origin) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
   }
 

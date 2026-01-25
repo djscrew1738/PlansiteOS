@@ -1,95 +1,174 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Card, { CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
 import Textarea from '../components/ui/Textarea';
 import Modal from '../components/ui/Modal';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
+import Select from '../components/ui/Select';
+import { useToast } from '../components/ui/Toast';
 import {
   PlusIcon,
   PhoneIcon,
   ChatBubbleLeftIcon,
   MapPinIcon,
   CalendarIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
-// Mock data
-const leadSources = [
-  { id: 'all', label: 'All', count: 15 },
-  { id: 'facebook', label: 'Facebook', count: 6 },
-  { id: 'website', label: 'Website', count: 4 },
-  { id: 'referral', label: 'Referral', count: 3 },
-  { id: 'phone', label: 'Phone', count: 2 }
-];
+// Lead type definition
+interface Lead {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  source: 'facebook' | 'website' | 'referral' | 'phone';
+  stage: 'new' | 'contacted' | 'quoted' | 'won' | 'lost';
+  notes: string;
+  estimatedValue: number | null;
+  createdAt: string;
+}
 
+// Kanban columns
 const kanbanColumns = [
   { id: 'new', title: 'New', color: 'blue' },
   { id: 'contacted', title: 'Contacted', color: 'purple' },
   { id: 'quoted', title: 'Quoted', color: 'yellow' },
   { id: 'won', title: 'Won', color: 'green' },
   { id: 'lost', title: 'Lost', color: 'red' }
-];
+] as const;
 
-const leads = [
+// Initial demo leads
+const initialLeads: Lead[] = [
   {
-    id: 1,
+    id: '1',
     name: 'John Smith',
     phone: '(214) 555-0123',
     address: '123 Oak St, Dallas, TX',
     source: 'facebook',
     stage: 'new',
-    daysOld: 1,
-    estimatedValue: null
+    notes: '',
+    estimatedValue: null,
+    createdAt: new Date(Date.now() - 86400000).toISOString()
   },
   {
-    id: 2,
+    id: '2',
     name: 'Sarah Johnson',
     phone: '(972) 555-0456',
     address: '456 Pine Ave, Plano, TX',
     source: 'website',
     stage: 'contacted',
-    daysOld: 3,
-    estimatedValue: null
+    notes: 'Called and left voicemail',
+    estimatedValue: null,
+    createdAt: new Date(Date.now() - 86400000 * 3).toISOString()
   },
   {
-    id: 3,
+    id: '3',
     name: 'Mike Williams',
     phone: '(469) 555-0789',
     address: '789 Elm Dr, Frisco, TX',
     source: 'referral',
     stage: 'quoted',
-    daysOld: 5,
-    estimatedValue: 28500
+    notes: 'Referral from ABC Construction',
+    estimatedValue: 28500,
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString()
   },
   {
-    id: 4,
+    id: '4',
     name: 'Emily Davis',
     phone: '(214) 555-0321',
     address: '321 Maple Rd, Allen, TX',
     source: 'website',
     stage: 'won',
-    daysOld: 12,
-    estimatedValue: 24500
+    notes: 'Contract signed!',
+    estimatedValue: 24500,
+    createdAt: new Date(Date.now() - 86400000 * 12).toISOString()
   }
 ];
 
+// Local storage key
+const LEADS_STORAGE_KEY = 'plansiteos-leads';
+
+// Load leads from localStorage
+function loadLeads(): Lead[] {
+  try {
+    const stored = localStorage.getItem(LEADS_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to load leads:', e);
+  }
+  return initialLeads;
+}
+
+// Save leads to localStorage
+function saveLeads(leads: Lead[]) {
+  localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(leads));
+}
+
+// Calculate days old from createdAt
+function getDaysOld(createdAt: string): number {
+  const created = new Date(createdAt);
+  const now = new Date();
+  return Math.floor((now.getTime() - created.getTime()) / 86400000);
+}
+
 const getSourceIcon = (source: string) => {
-  const icons = {
+  const icons: Record<string, string> = {
     facebook: '📱',
     website: '🌐',
     referral: '👥',
     phone: '📞'
   };
-  return icons[source as keyof typeof icons] || '📋';
+  return icons[source] || '📋';
 };
 
 export default function Leads() {
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [activeSource, setActiveSource] = useState('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [showDetail, setShowDetail] = useState(false);
   const [showAddLead, setShowAddLead] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const toast = useToast();
+
+  // New lead form state
+  const [newLead, setNewLead] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    source: 'website' as Lead['source'],
+    notes: ''
+  });
+
+  // Load leads on mount
+  useEffect(() => {
+    setLeads(loadLeads());
+  }, []);
+
+  // Save leads when they change
+  useEffect(() => {
+    if (leads.length > 0) {
+      saveLeads(leads);
+    }
+  }, [leads]);
+
+  // Calculate source counts
+  const leadSources = useMemo(() => {
+    const counts: Record<string, number> = { all: leads.length };
+    leads.forEach(lead => {
+      counts[lead.source] = (counts[lead.source] || 0) + 1;
+    });
+    return [
+      { id: 'all', label: 'All', count: counts.all || 0 },
+      { id: 'facebook', label: 'Facebook', count: counts.facebook || 0 },
+      { id: 'website', label: 'Website', count: counts.website || 0 },
+      { id: 'referral', label: 'Referral', count: counts.referral || 0 },
+      { id: 'phone', label: 'Phone', count: counts.phone || 0 }
+    ];
+  }, [leads]);
 
   const filteredLeads = leads.filter(
     lead => activeSource === 'all' || lead.source === activeSource
@@ -97,6 +176,56 @@ export default function Leads() {
 
   const getLeadsByStage = (stage: string) =>
     filteredLeads.filter(lead => lead.stage === stage);
+
+  const handleAddLead = () => {
+    if (!newLead.name.trim()) {
+      toast.error('Name required', 'Please enter a name');
+      return;
+    }
+    const lead: Lead = {
+      id: crypto.randomUUID(),
+      name: newLead.name.trim(),
+      phone: newLead.phone.trim(),
+      address: newLead.address.trim(),
+      source: newLead.source,
+      stage: 'new',
+      notes: newLead.notes.trim(),
+      estimatedValue: null,
+      createdAt: new Date().toISOString()
+    };
+    setLeads(prev => [lead, ...prev]);
+    setNewLead({ name: '', phone: '', address: '', source: 'website', notes: '' });
+    setShowAddLead(false);
+    toast.success('Lead added', `${lead.name} added to pipeline`);
+  };
+
+  const handleUpdateStage = (leadId: string, newStage: Lead['stage']) => {
+    setLeads(prev => prev.map(lead =>
+      lead.id === leadId ? { ...lead, stage: newStage } : lead
+    ));
+    if (selectedLead?.id === leadId) {
+      setSelectedLead(prev => prev ? { ...prev, stage: newStage } : null);
+    }
+  };
+
+  const handleUpdateNotes = (leadId: string, notes: string) => {
+    setLeads(prev => prev.map(lead =>
+      lead.id === leadId ? { ...lead, notes } : lead
+    ));
+  };
+
+  const handleDeleteLead = (leadId: string) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return;
+    setLeads(prev => prev.filter(lead => lead.id !== leadId));
+    setShowDetail(false);
+    setSelectedLead(null);
+    toast.success('Lead deleted');
+  };
+
+  const openLeadDetail = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowDetail(true);
+  };
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -167,24 +296,28 @@ export default function Leads() {
                     <Card
                       key={lead.id}
                       hover
-                      className="cursor-grab active:cursor-grabbing"
-                      onClick={() => setShowDetail(true)}
+                      className="cursor-pointer"
+                      onClick={() => openLeadDetail(lead)}
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between">
                           <h4 className="font-medium text-slate-100">{lead.name}</h4>
                           <span className="text-lg">{getSourceIcon(lead.source)}</span>
                         </div>
-                        <div className="flex items-center text-xs text-slate-400">
-                          <PhoneIcon className="w-3 h-3 mr-1" />
-                          {lead.phone}
-                        </div>
-                        <div className="flex items-start text-xs text-slate-400">
-                          <MapPinIcon className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                          <span className="line-clamp-2">{lead.address}</span>
-                        </div>
+                        {lead.phone && (
+                          <div className="flex items-center text-xs text-slate-400">
+                            <PhoneIcon className="w-3 h-3 mr-1" />
+                            {lead.phone}
+                          </div>
+                        )}
+                        {lead.address && (
+                          <div className="flex items-start text-xs text-slate-400">
+                            <MapPinIcon className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-2">{lead.address}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                          <span className="text-xs text-slate-500">{lead.daysOld}d ago</span>
+                          <span className="text-xs text-slate-500">{getDaysOld(lead.createdAt)}d ago</span>
                           {lead.estimatedValue && (
                             <span className="text-xs font-semibold text-blue-500">
                               ${lead.estimatedValue.toLocaleString()}
@@ -219,15 +352,17 @@ export default function Leads() {
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-slate-900/50 cursor-pointer" onClick={() => setShowDetail(true)}>
+                  <tr key={lead.id} className="hover:bg-slate-900/50 cursor-pointer" onClick={() => openLeadDetail(lead)}>
                     <td className="px-4 py-3 text-sm text-slate-200">{lead.name}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{lead.phone}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{lead.address}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{lead.phone || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{lead.address || '-'}</td>
                     <td className="px-4 py-3 text-sm">{getSourceIcon(lead.source)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="blue">{lead.stage}</Badge>
+                      <Badge variant={kanbanColumns.find(c => c.id === lead.stage)?.color as any || 'blue'}>
+                        {lead.stage}
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{lead.daysOld}d</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{getDaysOld(lead.createdAt)}d</td>
                     <td className="px-4 py-3 text-sm font-semibold text-blue-500">
                       {lead.estimatedValue ? `$${lead.estimatedValue.toLocaleString()}` : '-'}
                     </td>
@@ -242,103 +377,196 @@ export default function Leads() {
       {/* Lead Detail Modal */}
       <Modal
         isOpen={showDetail}
-        onClose={() => setShowDetail(false)}
+        onClose={() => { setShowDetail(false); setSelectedLead(null); }}
         title="Lead Details"
         size="lg"
       >
-        <div className="space-y-6">
-          {/* Contact Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-slate-400 block mb-1">Name</label>
-              <p className="text-slate-100">John Smith</p>
-            </div>
-            <div>
-              <label className="text-xs text-slate-400 block mb-1">Source</label>
-              <div className="flex items-center gap-2">
-                <span>📱</span>
-                <span className="text-slate-100">Facebook</span>
+        {selectedLead && (
+          <div className="space-y-6">
+            {/* Contact Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Name</label>
+                <p className="text-slate-100">{selectedLead.name}</p>
               </div>
-            </div>
-          </div>
-
-          {/* Contact Actions */}
-          <div className="flex gap-2">
-            <Button variant="primary" className="flex-1">
-              <PhoneIcon className="w-4 h-4 mr-2" />
-              Call
-            </Button>
-            <Button variant="secondary" className="flex-1">
-              <ChatBubbleLeftIcon className="w-4 h-4 mr-2" />
-              Text
-            </Button>
-          </div>
-
-          {/* Property Details */}
-          <div>
-            <label className="text-xs text-slate-400 block mb-1">Property Address</label>
-            <p className="text-slate-100">123 Oak St, Dallas, TX 75201</p>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="text-xs text-slate-400 block mb-2">Notes</label>
-            <Textarea rows={4} placeholder="Add notes about this lead..." />
-          </div>
-
-          {/* Activity Timeline */}
-          <div>
-            <label className="text-xs text-slate-400 block mb-3">Activity</label>
-            <div className="space-y-3">
-              <div className="flex gap-3">
-                <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                <div>
-                  <p className="text-sm text-slate-200">Lead received from Facebook</p>
-                  <p className="text-xs text-slate-500">1 day ago</p>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Source</label>
+                <div className="flex items-center gap-2">
+                  <span>{getSourceIcon(selectedLead.source)}</span>
+                  <span className="text-slate-100 capitalize">{selectedLead.source}</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 justify-end border-t border-slate-800 pt-4">
-            <Button variant="ghost" onClick={() => setShowDetail(false)}>
-              Close
-            </Button>
-            <Button variant="primary">
-              <CheckCircleIcon className="w-4 h-4 mr-2" />
-              Convert to Job
-            </Button>
+            {/* Contact Actions */}
+            {selectedLead.phone && (
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => window.open(`tel:${selectedLead.phone}`, '_self')}
+                >
+                  <PhoneIcon className="w-4 h-4 mr-2" />
+                  Call
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => window.open(`sms:${selectedLead.phone}`, '_self')}
+                >
+                  <ChatBubbleLeftIcon className="w-4 h-4 mr-2" />
+                  Text
+                </Button>
+              </div>
+            )}
+
+            {/* Property Details */}
+            {selectedLead.address && (
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Property Address</label>
+                <p className="text-slate-100">{selectedLead.address}</p>
+              </div>
+            )}
+
+            {/* Stage Select */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-2">Stage</label>
+              <Select
+                value={selectedLead.stage}
+                onChange={(e) => handleUpdateStage(selectedLead.id, e.target.value as Lead['stage'])}
+              >
+                {kanbanColumns.map(col => (
+                  <option key={col.id} value={col.id}>{col.title}</option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-2">Notes</label>
+              <Textarea
+                rows={4}
+                placeholder="Add notes about this lead..."
+                value={selectedLead.notes}
+                onChange={(e) => {
+                  setSelectedLead(prev => prev ? { ...prev, notes: e.target.value } : null);
+                }}
+                onBlur={(e) => handleUpdateNotes(selectedLead.id, e.target.value)}
+              />
+            </div>
+
+            {/* Activity Timeline */}
+            <div>
+              <label className="text-xs text-slate-400 block mb-3">Activity</label>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                  <div>
+                    <p className="text-sm text-slate-200">
+                      Lead received from {selectedLead.source}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {getDaysOld(selectedLead.createdAt)} days ago
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-between border-t border-slate-800 pt-4">
+              <Button
+                variant="ghost"
+                className="text-red-400 hover:text-red-300"
+                onClick={() => handleDeleteLead(selectedLead.id)}
+              >
+                <TrashIcon className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+              <div className="flex gap-3">
+                <Button variant="ghost" onClick={() => { setShowDetail(false); setSelectedLead(null); }}>
+                  Close
+                </Button>
+                {selectedLead.stage !== 'won' && (
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      handleUpdateStage(selectedLead.id, 'won');
+                      setShowDetail(false);
+                      setSelectedLead(null);
+                      toast.success('Lead converted', 'Marked as Won');
+                    }}
+                  >
+                    <CheckCircleIcon className="w-4 h-4 mr-2" />
+                    Mark as Won
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
 
       {/* Add Lead Modal */}
       <Modal
         isOpen={showAddLead}
-        onClose={() => setShowAddLead(false)}
+        onClose={() => {
+          setShowAddLead(false);
+          setNewLead({ name: '', phone: '', address: '', source: 'website', notes: '' });
+        }}
         title="Add New Lead"
         size="md"
       >
         <div className="space-y-4">
-          <Input label="Name" placeholder="John Smith" />
-          <Input label="Phone" type="tel" placeholder="(214) 555-0123" />
-          <Input label="Property Address" placeholder="123 Oak St, Dallas, TX" />
+          <Input
+            label="Name *"
+            placeholder="John Smith"
+            value={newLead.name}
+            onChange={(e) => setNewLead(prev => ({ ...prev, name: e.target.value }))}
+          />
+          <Input
+            label="Phone"
+            type="tel"
+            placeholder="(214) 555-0123"
+            value={newLead.phone}
+            onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))}
+          />
+          <Input
+            label="Property Address"
+            placeholder="123 Oak St, Dallas, TX"
+            value={newLead.address}
+            onChange={(e) => setNewLead(prev => ({ ...prev, address: e.target.value }))}
+          />
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Source</label>
-            <select className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100">
-              <option>Facebook</option>
-              <option>Website</option>
-              <option>Referral</option>
-              <option>Phone</option>
-            </select>
+            <Select
+              value={newLead.source}
+              onChange={(e) => setNewLead(prev => ({ ...prev, source: e.target.value as Lead['source'] }))}
+            >
+              <option value="facebook">Facebook</option>
+              <option value="website">Website</option>
+              <option value="referral">Referral</option>
+              <option value="phone">Phone</option>
+            </Select>
           </div>
-          <Textarea label="Notes" rows={3} placeholder="Additional details..." />
+          <Textarea
+            label="Notes"
+            rows={3}
+            placeholder="Additional details..."
+            value={newLead.notes}
+            onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))}
+          />
           <div className="flex gap-3 justify-end pt-4">
-            <Button variant="ghost" onClick={() => setShowAddLead(false)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowAddLead(false);
+                setNewLead({ name: '', phone: '', address: '', source: 'website', notes: '' });
+              }}
+            >
               Cancel
             </Button>
-            <Button variant="primary">
+            <Button variant="primary" onClick={handleAddLead}>
               Add Lead
             </Button>
           </div>

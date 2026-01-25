@@ -4,21 +4,25 @@ import {
   DocumentTextIcon,
   CalculatorIcon,
   UserGroupIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
   DocumentTextIcon as DocumentTextIconSolid,
   CalculatorIcon as CalculatorIconSolid,
   UserGroupIcon as UserGroupIconSolid,
-  ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid
+  ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
+  ChartBarIcon as ChartBarIconSolid
 } from '@heroicons/react/24/solid';
+import { getShortcutDisplay } from '../../hooks/useKeyboard';
 
 const tabs = [
   { path: '/', label: 'Dashboard', icon: HomeIcon, iconSolid: HomeIconSolid },
   { path: '/blueprints', label: 'Blueprints', icon: DocumentTextIcon, iconSolid: DocumentTextIconSolid },
   { path: '/estimates', label: 'Estimates', icon: CalculatorIcon, iconSolid: CalculatorIconSolid },
   { path: '/leads', label: 'Leads', icon: UserGroupIcon, iconSolid: UserGroupIconSolid },
+  { path: '/reports', label: 'Reports', icon: ChartBarIcon, iconSolid: ChartBarIconSolid },
   { path: '/messages', label: 'Messages', icon: ChatBubbleLeftRightIcon, iconSolid: ChatBubbleLeftRightIconSolid }
 ];
 
@@ -29,7 +33,7 @@ export default function TabBar() {
     <>
       {/* Mobile Bottom Tab Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40">
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-6 h-16">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
             const Icon = isActive ? tab.iconSolid : tab.icon;
@@ -77,7 +81,27 @@ export default function TabBar() {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800 space-y-3">
+          {/* Keyboard Shortcuts Hint */}
+          <div className="px-4 py-2 rounded-lg bg-slate-800/50">
+            <p className="text-xs text-slate-400 mb-2">Quick Actions</p>
+            <div className="space-y-1 text-xs text-slate-500">
+              <div className="flex items-center justify-between">
+                <span>Command Palette</span>
+                <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-slate-700 border border-slate-600 rounded">
+                  {getShortcutDisplay('mod+k')}
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Shortcuts Help</span>
+                <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-slate-700 border border-slate-600 rounded">
+                  ?
+                </kbd>
+              </div>
+            </div>
+          </div>
+
+          {/* User Profile */}
           <div className="flex items-center space-x-3 px-4 py-3">
             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-medium text-slate-200">
               CT

@@ -10,3 +10,4 @@ export { default as Avatar } from './Avatar';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 export { default as EmptyState } from './EmptyState';
+export { default as ToastContainer, useToast } from './Toast';

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -8,41 +10,153 @@ import {
   ChatBubbleLeftIcon,
   PlusIcon,
   CalculatorIcon,
-  CloudArrowUpIcon
+  CloudArrowUpIcon,
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useBids, useBlueprints, useHealth, useBidStatistics } from '../hooks/useApi';
+import { getShortcutDisplay } from '../hooks/useKeyboard';
 
-// Mock data
-const stats = [
-  { label: 'Active Jobs', value: '12', icon: WrenchScrewdriverIcon, color: 'blue' },
-  { label: 'Pending Estimates', value: '8', icon: CalculatorIcon, color: 'yellow' },
-  { label: 'New Leads (Week)', value: '5', icon: UserGroupIcon, color: 'green' },
-  { label: 'Unread Messages', value: '3', icon: ChatBubbleLeftIcon, color: 'purple' }
-];
+// Format relative time
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-const revenueData = [
-  { month: 'Jul', revenue: 45000 },
-  { month: 'Aug', revenue: 52000 },
-  { month: 'Sep', revenue: 48000 },
-  { month: 'Oct', revenue: 61000 },
-  { month: 'Nov', revenue: 58000 },
-  { month: 'Dec', revenue: 67000 }
-];
-
-const recentActivity = [
-  { id: 1, type: 'job', title: 'New job created', description: 'Westlake Apartments - Building C', time: '2h ago', badge: 'blue' },
-  { id: 2, type: 'estimate', title: 'Estimate sent', description: 'Highland Park Townhomes - $24,500', time: '5h ago', badge: 'yellow' },
-  { id: 3, type: 'lead', title: 'New lead received', description: 'Facebook - 4BR New Construction', time: '1d ago', badge: 'green' },
-  { id: 4, type: 'message', title: 'Message from John Builder', description: 'Question about fixture pricing', time: '1d ago', badge: 'purple' }
-];
-
-const upcomingDeadlines = [
-  { id: 1, job: 'Lakewood Manor - Phase 2', date: 'Jan 25', status: 'urgent' },
-  { id: 2, job: 'Preston Heights Development', date: 'Jan 28', status: 'upcoming' },
-  { id: 3, job: 'Oak Creek Subdivision', date: 'Feb 2', status: 'upcoming' }
-];
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
 
 export default function Dashboard() {
+  // API hooks
+  const { data: bidsData, isLoading: loadingBids } = useBids(1, 50);
+  const { data: blueprintsData, isLoading: loadingBlueprints } = useBlueprints(1, 50);
+  const { data: healthData } = useHealth();
+  const { data: statsData } = useBidStatistics();
+
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    const bids = bidsData?.bids || [];
+    const blueprints = blueprintsData?.blueprints || [];
+
+    const draftBids = bids.filter(b => b.status === 'draft' || b.status === 'pending_review').length;
+    const acceptedBids = bids.filter(b => b.status === 'accepted').length;
+    const processingBlueprints = blueprints.filter(b => b.status === 'processing' || b.status === 'pending').length;
+
+    return [
+      { label: 'Active Bids', value: String(acceptedBids), icon: WrenchScrewdriverIcon, color: 'blue' },
+      { label: 'Pending Estimates', value: String(draftBids), icon: CalculatorIcon, color: 'yellow' },
+      { label: 'Blueprints', value: String(blueprints.length), icon: DocumentTextIcon, color: 'green' },
+      { label: 'Processing', value: String(processingBlueprints), icon: ArrowPathIcon, color: 'purple' }
+    ];
+  }, [bidsData, blueprintsData]);
+
+  // Calculate revenue data from bids
+  const revenueData = useMemo(() => {
+    const bids = bidsData?.bids || [];
+    const monthlyTotals: Record<string, number> = {};
+
+    // Get last 6 months
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+      months.push(monthKey);
+      monthlyTotals[monthKey] = 0;
+    }
+
+    // Sum accepted bids by month
+    bids
+      .filter(b => b.status === 'accepted')
+      .forEach(bid => {
+        const date = new Date(bid.created_at);
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+        if (monthlyTotals[monthKey] !== undefined) {
+          monthlyTotals[monthKey] += bid.grand_total;
+        }
+      });
+
+    return months.map(month => ({
+      month,
+      revenue: monthlyTotals[month] || 0
+    }));
+  }, [bidsData]);
+
+  // Recent activity from bids and blueprints
+  const recentActivity = useMemo(() => {
+    const activities: Array<{
+      id: string;
+      type: string;
+      title: string;
+      description: string;
+      time: string;
+      badge: string;
+      date: Date;
+    }> = [];
+
+    // Add recent bids
+    (bidsData?.bids || []).slice(0, 5).forEach(bid => {
+      const statusLabels: Record<string, string> = {
+        draft: 'New estimate created',
+        sent: 'Estimate sent',
+        accepted: 'Estimate accepted',
+        rejected: 'Estimate declined',
+      };
+      activities.push({
+        id: `bid-${bid.id}`,
+        type: 'estimate',
+        title: statusLabels[bid.status] || 'Estimate updated',
+        description: `${bid.project_name} - $${bid.grand_total.toLocaleString()}`,
+        time: formatRelativeTime(bid.updated_at),
+        badge: bid.status === 'accepted' ? 'green' : bid.status === 'rejected' ? 'red' : 'yellow',
+        date: new Date(bid.updated_at),
+      });
+    });
+
+    // Add recent blueprints
+    (blueprintsData?.blueprints || []).slice(0, 3).forEach(bp => {
+      activities.push({
+        id: `bp-${bp.id}`,
+        type: 'blueprint',
+        title: bp.status === 'completed' ? 'Blueprint analyzed' : 'Blueprint uploaded',
+        description: `${bp.project_name} - ${bp.total_fixtures} fixtures`,
+        time: formatRelativeTime(bp.updated_at),
+        badge: bp.status === 'completed' ? 'blue' : bp.status === 'failed' ? 'red' : 'purple',
+        date: new Date(bp.updated_at),
+      });
+    });
+
+    // Sort by date and take top 4
+    return activities
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 4);
+  }, [bidsData, blueprintsData]);
+
+  // Upcoming deadlines from pending bids
+  const upcomingDeadlines = useMemo(() => {
+    const pendingBids = (bidsData?.bids || [])
+      .filter(b => b.status === 'sent' || b.status === 'pending_review')
+      .slice(0, 3);
+
+    return pendingBids.map(bid => ({
+      id: bid.id,
+      job: bid.project_name,
+      date: new Date(bid.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      status: 'upcoming' as const,
+    }));
+  }, [bidsData]);
+
+  const isLoading = loadingBids || loadingBlueprints;
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
@@ -141,25 +255,88 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* System Health */}
+      {healthData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>System Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                {healthData.services.database.healthy ? (
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                ) : (
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+                )}
+                <span className="text-sm text-slate-300">Database</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {healthData.services.ai.initialized ? (
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                ) : (
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
+                )}
+                <span className="text-sm text-slate-300">AI Service</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {healthData.services.blueprints.initialized ? (
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                ) : (
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
+                )}
+                <span className="text-sm text-slate-300">Blueprint Processor</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Quick Actions</CardTitle>
+            <p className="text-xs text-slate-500">
+              Press <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-slate-800 border border-slate-700 rounded">?</kbd> for shortcuts
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Button variant="primary" className="w-full justify-start">
-              <PlusIcon className="w-5 h-5 mr-2" />
-              New Job
-            </Button>
-            <Button variant="secondary" className="w-full justify-start">
-              <CalculatorIcon className="w-5 h-5 mr-2" />
-              Quick Estimate
-            </Button>
-            <Button variant="secondary" className="w-full justify-start">
-              <CloudArrowUpIcon className="w-5 h-5 mr-2" />
-              Upload Blueprint
-            </Button>
+            <Link to="/blueprints">
+              <Button variant="primary" className="w-full justify-between">
+                <span className="flex items-center">
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  New Project
+                </span>
+                <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
+                  {getShortcutDisplay('mod+u')}
+                </kbd>
+              </Button>
+            </Link>
+            <Link to="/estimates">
+              <Button variant="secondary" className="w-full justify-between">
+                <span className="flex items-center">
+                  <CalculatorIcon className="w-5 h-5 mr-2" />
+                  Quick Estimate
+                </span>
+                <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
+                  {getShortcutDisplay('mod+n')}
+                </kbd>
+              </Button>
+            </Link>
+            <Link to="/blueprints">
+              <Button variant="secondary" className="w-full justify-between">
+                <span className="flex items-center">
+                  <CloudArrowUpIcon className="w-5 h-5 mr-2" />
+                  Upload Blueprint
+                </span>
+                <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
+                  {getShortcutDisplay('mod+u')}
+                </kbd>
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
