@@ -68,7 +68,30 @@ export function useDeleteBlueprint() {
   const queryClient = useQueryClient();
   return useMutation<{ success: boolean; message: string }, ApiError, string>({
     mutationFn: (id) => api.blueprints.delete(id),
-    onSuccess: () => {
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: queryKeys.blueprints });
+
+      // Snapshot the previous value
+      const previousBlueprints = queryClient.getQueryData<BlueprintsListResponse>(queryKeys.blueprints);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, (old) => ({
+        ...old,
+        blueprints: old?.blueprints.filter((bp) => bp.id !== deletedId) || [],
+      }));
+
+      // Return a context object with the snapshotted value
+      return { previousBlueprints };
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err, newTodo, context) => {
+      if (context?.previousBlueprints) {
+        queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, context.previousBlueprints);
+      }
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blueprints });
     },
   });

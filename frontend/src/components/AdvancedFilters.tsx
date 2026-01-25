@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import { XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { useDebounce } from '../hooks/useDebounce';
 
 export interface FilterValues {
   dateRange?: { start: string; end: string };
@@ -38,6 +39,14 @@ const STATUS_OPTIONS = [
 
 export default function AdvancedFilters({ values, onChange, onClear }: AdvancedFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [localAmountRange, setLocalAmountRange] = useState(values.amountRange);
+  const debouncedAmountRange = useDebounce(localAmountRange, 500);
+
+  useEffect(() => {
+    if (debouncedAmountRange !== values.amountRange) {
+      handleAmountRangeChange(debouncedAmountRange?.min, debouncedAmountRange?.max);
+    }
+  }, [debouncedAmountRange, values.amountRange]);
 
   const handleDateRangeChange = (range: { start: string; end: string } | undefined) => {
     onChange({ ...values, dateRange: range });
@@ -48,6 +57,10 @@ export default function AdvancedFilters({ values, onChange, onClear }: AdvancedF
       ...values,
       amountRange: min !== undefined || max !== undefined ? { min: min || 0, max: max || Infinity } : undefined,
     });
+  };
+
+  const handleLocalAmountRangeChange = (min?: number, max?: number) => {
+    setLocalAmountRange(min !== undefined || max !== undefined ? { min: min || 0, max: max || Infinity } : undefined);
   };
 
   const handleStatusToggle = (status: string) => {
@@ -137,19 +150,19 @@ export default function AdvancedFilters({ values, onChange, onClear }: AdvancedF
                 type="number"
                 label="Min ($)"
                 placeholder="0"
-                value={values.amountRange?.min || ''}
-                onChange={(e) => handleAmountRangeChange(
+                value={localAmountRange?.min || ''}
+                onChange={(e) => handleLocalAmountRangeChange(
                   e.target.value ? parseFloat(e.target.value) : undefined,
-                  values.amountRange?.max
+                  localAmountRange?.max
                 )}
               />
               <Input
                 type="number"
                 label="Max ($)"
                 placeholder="No limit"
-                value={values.amountRange?.max === Infinity ? '' : values.amountRange?.max || ''}
-                onChange={(e) => handleAmountRangeChange(
-                  values.amountRange?.min,
+                value={localAmountRange?.max === Infinity ? '' : localAmountRange?.max || ''}
+                onChange={(e) => handleLocalAmountRangeChange(
+                  localAmountRange?.min,
                   e.target.value ? parseFloat(e.target.value) : undefined
                 )}
               />

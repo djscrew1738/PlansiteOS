@@ -21,6 +21,8 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
+import BlueprintCardSkeleton from '../components/BlueprintCardSkeleton';
+import ErrorState from '../components/ui/ErrorState';
 import { useBlueprints, useUploadBlueprint, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
 import { blueprintsApi } from '../lib/api';
 import type { Blueprint, BlueprintStatus } from '../types/api';
@@ -61,8 +63,22 @@ function UploadModal({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploads, setUploads] = useState<FileUpload[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [errors, setErrors] = useState<{ projectName?: string; projectAddress?: string }>({});
   const uploadMutation = useUploadBlueprint();
   const toast = useToast();
+
+  const validateField = (name: string, value: string) => {
+    if (!value.trim()) {
+      return `${name} is required.`;
+    }
+    return undefined;
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
@@ -127,6 +143,18 @@ function UploadModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const projectNameError = validateField('Project Name', projectName);
+    const projectAddressError = validateField('Project Address', projectAddress);
+
+    if (projectNameError || projectAddressError) {
+      setErrors({
+        projectName: projectNameError,
+        projectAddress: projectAddressError,
+      });
+      return;
+    }
+
     if (selectedFiles.length === 0) {
       toast.error('No files selected', 'Please select at least one blueprint file');
       return;
@@ -171,6 +199,7 @@ function UploadModal({
         setUploads([]);
         setProjectName('');
         setProjectAddress('');
+        setErrors({});
       }, 2000);
     }
   };
@@ -183,20 +212,28 @@ function UploadModal({
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Project Name</label>
               <Input
+                name="projectName"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
+                onBlur={handleBlur}
                 placeholder="e.g., Westlake Apartments Building C"
                 disabled={isUploading}
+                className={errors.projectName ? 'border-red-500' : ''}
               />
+              {errors.projectName && <p className="text-red-500 text-xs mt-1">{errors.projectName}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Project Address</label>
               <Input
+                name="projectAddress"
                 value={projectAddress}
                 onChange={(e) => setProjectAddress(e.target.value)}
+                onBlur={handleBlur}
                 placeholder="123 Main St, City, State"
                 disabled={isUploading}
+                className={errors.projectAddress ? 'border-red-500' : ''}
               />
+              {errors.projectAddress && <p className="text-red-500 text-xs mt-1">{errors.projectAddress}</p>}
             </div>
           </>
         )}
@@ -329,6 +366,7 @@ function UploadModal({
                 setUploads([]);
                 setProjectName('');
                 setProjectAddress('');
+                setErrors({});
               }
             }}
             disabled={isUploading}
@@ -338,7 +376,7 @@ function UploadModal({
           <Button
             type="submit"
             variant="primary"
-            disabled={selectedFiles.length === 0 || isUploading}
+            disabled={selectedFiles.length === 0 || isUploading || Object.values(errors).some(e => e)}
           >
             {isUploading
               ? `Uploading ${uploads.filter(u => u.status === 'uploading' || u.status === 'pending').length}...`
@@ -357,11 +395,13 @@ function BlueprintCard({
   onView,
   onDelete,
   onGenerateBid,
+  isGeneratingBid,
 }: {
   blueprint: Blueprint;
   onView: () => void;
   onDelete: () => void;
   onGenerateBid: () => void;
+  isGeneratingBid: boolean;
 }) {
   const statusInfo = statusBadges[blueprint.status] || { variant: 'blue', label: blueprint.status };
 
@@ -402,16 +442,20 @@ function BlueprintCard({
           )}
         </div>
         <div className="flex gap-2 mt-4">
-          <Button variant="secondary" size="sm" className="flex-1" onClick={onView}>
+          <Button variant="secondary" size="sm" className="flex-1" onClick={onView} disabled={isGeneratingBid}>
             <EyeIcon className="w-4 h-4 mr-1" />
             View
           </Button>
           {blueprint.status === 'completed' && (
-            <Button variant="primary" size="sm" onClick={onGenerateBid}>
-              <CurrencyDollarIcon className="w-4 h-4" />
+            <Button variant="primary" size="sm" onClick={onGenerateBid} disabled={isGeneratingBid}>
+              {isGeneratingBid ? (
+                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+              ) : (
+                <CurrencyDollarIcon className="w-4 h-4" />
+              )}
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={onDelete}>
+          <Button variant="ghost" size="sm" onClick={onDelete} disabled={isGeneratingBid}>
             <TrashIcon className="w-4 h-4" />
           </Button>
         </div>
@@ -430,6 +474,7 @@ export default function Blueprints() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [generatingBidId, setGeneratingBidId] = useState<string | null>(null);
 
   // API Hooks
   const { data, isLoading, error, refetch } = useBlueprints();
@@ -458,12 +503,15 @@ export default function Blueprints() {
   };
 
   const handleGenerateBid = async (blueprintId: string) => {
+    setGeneratingBidId(blueprintId);
     try {
       const result = await generateBidMutation.mutateAsync({ blueprintId });
       toast.success('Bid generated', `Bid #${result.bid.bid_number}`);
       navigate(`/estimates`); // Navigate to estimates page
     } catch (err) {
       toast.error('Failed to generate bid', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setGeneratingBidId(null);
     }
   };
 
@@ -578,19 +626,20 @@ export default function Blueprints() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <ArrowPathIcon className="w-8 h-8 text-blue-400 animate-spin" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <BlueprintCardSkeleton key={i} />
+          ))}
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <Card className="border-red-500/50 bg-red-500/10">
-          <p className="text-red-400">{error.message}</p>
-          <Button variant="secondary" size="sm" onClick={() => refetch()} className="mt-2">
-            Retry
-          </Button>
-        </Card>
+        <ErrorState
+          title="Failed to load blueprints"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
       )}
 
       {/* Blueprints Grid/List */}
@@ -615,6 +664,7 @@ export default function Blueprints() {
               onView={() => navigate(`/blueprints/${blueprint.id}`)}
               onDelete={() => handleDelete(blueprint.id)}
               onGenerateBid={() => handleGenerateBid(blueprint.id)}
+              isGeneratingBid={generatingBidId === blueprint.id}
             />
           ))}
         </div>
@@ -635,6 +685,7 @@ export default function Blueprints() {
               <tbody className="divide-y divide-slate-800">
                 {filteredBlueprints.map((blueprint) => {
                   const statusInfo = statusBadges[blueprint.status] || { variant: 'blue', label: blueprint.status };
+                  const isGeneratingBid = generatingBidId === blueprint.id;
                   return (
                     <tr key={blueprint.id} className="hover:bg-slate-900/50">
                       <td className="px-4 py-3 text-sm text-slate-200">
@@ -652,15 +703,19 @@ export default function Blueprints() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/blueprints/${blueprint.id}`)}>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/blueprints/${blueprint.id}`)} disabled={isGeneratingBid}>
                             <EyeIcon className="w-4 h-4" />
                           </Button>
                           {blueprint.status === 'completed' && (
-                            <Button variant="ghost" size="sm" onClick={() => handleGenerateBid(blueprint.id)}>
-                              <CurrencyDollarIcon className="w-4 h-4" />
+                            <Button variant="ghost" size="sm" onClick={() => handleGenerateBid(blueprint.id)} disabled={isGeneratingBid}>
+                              {isGeneratingBid ? (
+                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CurrencyDollarIcon className="w-4 h-4" />
+                              )}
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(blueprint.id)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(blueprint.id)} disabled={isGeneratingBid}>
                             <TrashIcon className="w-4 h-4" />
                           </Button>
                         </div>

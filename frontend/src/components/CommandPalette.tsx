@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command } from 'cmdk';
 import {
@@ -25,25 +25,41 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const { data: bidsData } = useBids(1, 100);
   const { data: blueprintsData } = useBlueprints(1, 100);
 
-  // Close on escape
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (open) {
-      window.addEventListener('keydown', handleEscape);
-      return () => window.removeEventListener('keydown', handleEscape);
-    }
-  }, [open, onClose]);
-
-  const handleSelect = (callback: () => void) => {
+  const handleSelect = useCallback((callback: () => void) => {
     callback();
     onClose();
     setSearch('');
-  };
+  }, [onClose]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (open && (e.metaKey || e.ctrlKey)) {
+        switch (e.key.toLowerCase()) {
+          case 'n':
+            e.preventDefault();
+            handleSelect(() => navigate('/estimates'));
+            break;
+          case 'u':
+            e.preventDefault();
+            handleSelect(() => navigate('/blueprints'));
+            break;
+          case 'l':
+            e.preventDefault();
+            handleSelect(() => navigate('/leads'));
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose, handleSelect, navigate]);
 
   if (!open) return null;
 
