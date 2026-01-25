@@ -1,12 +1,13 @@
-# PlansiteOS - Caddy Configuration for Tailscale Access
-# Accessible via http://100.109.158.92:8081
+# PlansiteOS - Caddy Configuration
+# Accessible via http://100.109.158.92:8099 or https://app.ctlplumbingllc.com
 
+# Internal/Tailscale access
 :80 {
   encode zstd gzip
 
-  # API routes
+  # API routes (Docker container)
   @api path /api/*
-  reverse_proxy @api api:8000
+  reverse_proxy @api node-api:5001
 
   # Health check endpoint
   @health path /health
@@ -30,6 +31,77 @@
   }
 
   # Access logs
+  log {
+    output file /var/log/caddy/access.log
+    format json
+  }
+}
+
+# Public domain redirect to app subdomain (canonical)
+ctlplumbingllc.com {
+  redir https://app.ctlplumbingllc.com{uri} permanent
+}
+
+# Public app domain access with automatic HTTPS
+# NOTE: Requires DNS A record pointing app.ctlplumbingllc.com to your server's public IP
+app.ctlplumbingllc.com {
+  encode zstd gzip
+
+  # Matchers
+  @api path /api/*
+  @health path /health
+  @cors_preflight {
+    method OPTIONS
+    path /api/*
+  }
+
+  # Ordered handlers (preflight before proxy)
+  route {
+    handle @cors_preflight {
+      header {
+        Access-Control-Allow-Origin "{http.request.header.origin}"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        Access-Control-Allow-Credentials "true"
+        Vary "Origin"
+      }
+      respond "" 204
+    }
+
+    handle @health {
+      respond 200
+    }
+
+    handle @api {
+      reverse_proxy node-api:5001 {
+        header_down Access-Control-Allow-Origin "{http.request.header.origin}"
+        header_down Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        header_down Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        header_down Access-Control-Allow-Credentials "true"
+        header_down Vary "Origin"
+      }
+    }
+
+    handle {
+      reverse_proxy frontend:4173
+    }
+  }
+
+  # Security headers
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    X-XSS-Protection "1; mode=block"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  }
+
+  # Large file uploads
+  @upload path /api/blueprints/* /api/projects/*/uploads
+  request_body @upload {
+    max_size 200MB
+  }
+
   log {
     output file /var/log/caddy/access.log
     format json

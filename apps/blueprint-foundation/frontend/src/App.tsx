@@ -1,7 +1,6 @@
 /**
  * Main App component with routing
  */
-import React from 'react'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { NewProject } from './pages/NewProject'
 import { ProjectDetail } from './pages/ProjectDetail'

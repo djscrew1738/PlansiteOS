@@ -1,0 +1,7 @@
+18:31:26 [[31merror[39m] Database connection failed
+{
+  "error": "getaddrinfo EAI_AGAIN postgres",
+  "config": {
+    "database": "postgres:5432/plansite"
+  }
+}

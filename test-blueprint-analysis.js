@@ -17,7 +17,7 @@ const path = require('path');
 const http = require('http');
 
 // Configuration
-const API_BASE = process.env.API_BASE || 'http://localhost:8090';
+const API_BASE = process.env.API_BASE || 'http://localhost:5001';
 const BLUEPRINT_PATH = process.argv[2] || './test-blueprint.jpg';
 
 // Colors for console output

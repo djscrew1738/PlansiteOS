@@ -1,26 +1,73 @@
-import { Route, Routes, Link } from 'react-router-dom';
-import NewProjectPage from './pages/NewProjectPage';
-import ProjectPage from './pages/ProjectPage';
-import UploadPage from './pages/UploadPage';
-import PageViewer from './pages/PageViewer';
+import { useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import Layout from './components/layout/Layout';
+import Dashboard from './pages/Dashboard';
+import Blueprints from './pages/Blueprints';
+import BlueprintDetail from './pages/BlueprintDetail';
+import Estimates from './pages/Estimates';
+import Leads from './pages/Leads';
+import Messages from './pages/Messages';
+import Reports from './pages/Reports';
+import ToastContainer from './components/ui/Toast';
+import CommandPalette from './components/CommandPalette';
+import ShortcutsModal from './components/ShortcutsModal';
+import { useKeyboard, usePreventDefaults } from './hooks/useKeyboard';
 
 export default function App() {
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const navigate = useNavigate();
+
+  // Prevent default browser shortcuts
+  usePreventDefaults();
+
+  // Global keyboard shortcuts
+  useKeyboard('mod+k', (e) => {
+    e.preventDefault();
+    setShowCommandPalette(true);
+  });
+
+  useKeyboard('shift+/', () => {
+    setShowShortcuts(true);
+  });
+
+  useKeyboard('escape', () => {
+    setShowCommandPalette(false);
+    setShowShortcuts(false);
+  });
+
+  // Navigation shortcuts
+  useKeyboard('mod+n', (e) => {
+    e.preventDefault();
+    navigate('/estimates');
+  });
+
+  useKeyboard('mod+u', (e) => {
+    e.preventDefault();
+    navigate('/blueprints');
+  });
+
+  useKeyboard('mod+l', (e) => {
+    e.preventDefault();
+    navigate('/leads');
+  });
+
   return (
-    <div className="app-shell">
-      <header>
-        <h1>Blueprint Upload Foundation</h1>
-        <nav>
-          <Link to="/projects/new" style={{ color: '#fff' }}>New Project</Link>
-        </nav>
-      </header>
-      <main>
+    <>
+      <Layout>
         <Routes>
-          <Route path="/projects/new" element={<NewProjectPage />} />
-          <Route path="/projects/:projectId" element={<ProjectPage />} />
-          <Route path="/uploads/:uploadId" element={<UploadPage />} />
-          <Route path="/pages/:pageId" element={<PageViewer />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/blueprints" element={<Blueprints />} />
+          <Route path="/blueprints/:id" element={<BlueprintDetail />} />
+          <Route path="/estimates" element={<Estimates />} />
+          <Route path="/leads" element={<Leads />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/reports" element={<Reports />} />
         </Routes>
-      </main>
-    </div>
+      </Layout>
+      <ToastContainer />
+      <CommandPalette open={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
+      <ShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+    </>
   );
 }

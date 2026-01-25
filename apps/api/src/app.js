@@ -16,15 +16,22 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3002',
-    'http://localhost:5000',
-    'http://100.109.158.92:5000',
+    'http://localhost:5001',
+    'http://localhost:8090',
+    'http://100.109.158.92:8099',
     'https://ctlplumbingllc.com',
     'https://www.ctlplumbingllc.com',
+    'https://app.ctlplumbingllc.com',
     process.env.DOMAIN_URL
   ].filter(Boolean);
 
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin) || !origin) {
+
+  // Allow all localhost origins in development
+  const isLocalhost = origin && origin.match(/^http:\/\/localhost:\d+$/);
+  const isAllowed = allowedOrigins.includes(origin) || isLocalhost;
+
+  if (isAllowed || !origin) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
   }
 
@@ -47,9 +54,11 @@ app.use(correlationIdMiddleware());
 
 // API Routes
 const healthRoutes = require('./routes/health.routes');
+const statusRoutes = require('./routes/status.routes');
 const v1Routes = require('./routes/v1');
 
 app.use('/api/health', healthRoutes);
+app.use('/api/status', statusRoutes);
 app.use('/api/v1', v1Routes);
 
 // Legacy route for backwards compatibility

@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 const DxfParser = require('dxf-parser');
-const logger = require('../../platform/observability/logger');
+const logger = require('../platform/observability/logger');
 
 class DxfProcessor {
   constructor() {

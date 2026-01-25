@@ -91,7 +91,7 @@ export const BlueprintViewer: React.FC<BlueprintViewerProps> = ({
     })
   }
 
-  const handleStageClick = (e: any) => {
+  const handleStageClick = () => {
     if (!calibrationMode) return
 
     const stage = stageRef.current

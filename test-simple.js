@@ -8,7 +8,7 @@
 const fs = require('fs');
 const http = require('http');
 
-const API_BASE = process.env.API_BASE || 'http://localhost:5000';
+const API_BASE = process.env.API_BASE || 'http://localhost:5001';
 const colors = {
   reset: '\x1b[0m',
   green: '\x1b[32m',

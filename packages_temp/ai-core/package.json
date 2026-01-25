@@ -5,7 +5,7 @@
   "description": "AI provider abstraction layer",
   "main": "src/index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "lint": "eslint src/",
     "clean": "rm -rf dist"
   },

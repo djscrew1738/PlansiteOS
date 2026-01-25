@@ -3,8 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, X, FileText, AlertCircle, CheckCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import BASE_URL from '../../api/baseUrl';
 const MAX_FILE_SIZE_MB = 50;
 
 export default function BlueprintUpload({ onClose, onSuccess }) {

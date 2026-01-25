@@ -9,10 +9,15 @@ import BidDetail from '../pages/BidDetail';
 import Material from '../pages/Material';
 import Leads from '../pages/Leads';
 import Settings from '../pages/Settings';
+import SystemStatus from '../pages/SystemStatus';
 
 function App() {
   return (
     <Routes>
+      {/* Standalone routes (no tab layout) */}
+      <Route path="/status" element={<SystemStatus />} />
+
+      {/* Main app with tab layout */}
       <Route path="/" element={<TabbedLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="messages" element={<Messages />} />

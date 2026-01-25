@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { apiClient } from '../api/client'
 import { Page, Upload } from '../types'
 import { BlueprintViewer } from '../components/BlueprintViewer'
 import { ThumbnailGrid } from '../components/ThumbnailGrid'
@@ -12,7 +11,7 @@ export const PageViewer: React.FC = () => {
   const { pageId } = useParams<{ pageId: string }>()
   const navigate = useNavigate()
   const [page, setPage] = useState<Page | null>(null)
-  const [upload, setUpload] = useState<Upload | null>(null)
+  const [upload] = useState<Upload | null>(null)
   const [loading, setLoading] = useState(true)
   const [showSidebar, setShowSidebar] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
