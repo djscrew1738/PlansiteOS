@@ -78,3 +78,16 @@ body {
 .animate-slideIn {
   animation: slideIn 0.3s ease-out;
 }
+
+@keyframes progressSlide {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 2rem 0;
+  }
+}
+
+.animate-progress-slide {
+  animation: progressSlide 1s linear infinite;
+}
