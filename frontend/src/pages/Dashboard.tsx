@@ -18,6 +18,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useBids, useBlueprints, useHealth, useBidStatistics } from '../hooks/useApi';
 import { getShortcutDisplay } from '../hooks/useKeyboard';
+import { DashboardSkeleton } from './DashboardSkeleton';
 
 // Format relative time
 function formatRelativeTime(dateString: string): string {
@@ -156,6 +157,10 @@ export default function Dashboard() {
   }, [bidsData]);
 
   const isLoading = loadingBids || loadingBlueprints;
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">

@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import Blueprints from './pages/Blueprints';
-import BlueprintDetail from './pages/BlueprintDetail';
-import Estimates from './pages/Estimates';
-import Leads from './pages/Leads';
-import Messages from './pages/Messages';
-import Reports from './pages/Reports';
 import ToastContainer from './components/ui/Toast';
 import CommandPalette from './components/CommandPalette';
 import ShortcutsModal from './components/ShortcutsModal';
 import { useKeyboard, usePreventDefaults } from './hooks/useKeyboard';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Blueprints = lazy(() => import('./pages/Blueprints'));
+const BlueprintDetail = lazy(() => import('./pages/BlueprintDetail'));
+const Estimates = lazy(() => import('./pages/Estimates'));
+const Leads = lazy(() => import('./pages/Leads'));
+const Messages = lazy(() => import('./pages/Messages'));
+const Reports = lazy(() => import('./pages/Reports'));
 
 export default function App() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -55,15 +56,17 @@ export default function App() {
   return (
     <>
       <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/blueprints" element={<Blueprints />} />
-          <Route path="/blueprints/:id" element={<BlueprintDetail />} />
-          <Route path="/estimates" element={<Estimates />} />
-          <Route path="/leads" element={<Leads />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/reports" element={<Reports />} />
-        </Routes>
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/blueprints" element={<Blueprints />} />
+            <Route path="/blueprints/:id" element={<BlueprintDetail />} />
+            <Route path="/estimates" element={<Estimates />} />
+            <Route path="/leads" element={<Leads />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/reports" element={<Reports />} />
+          </Routes>
+        </Suspense>
       </Layout>
       <ToastContainer />
       <CommandPalette open={showCommandPalette} onClose={() => setShowCommandPalette(false)} />
