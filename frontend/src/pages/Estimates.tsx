@@ -25,6 +25,7 @@ import {
 import { useBids, useBid, useCloneBid, useUpdateBidStatus, useDeleteBid } from '../hooks/useApi';
 import { useToast } from '../components/ui/Toast';
 import { useSelectionStore } from '../stores/selectionStore';
+import { EstimatesSkeleton } from './EstimatesSkeleton';
 import { exportEstimatesToCSV } from '../lib/export';
 import type { Bid, BidStatus } from '../types/api';
 
@@ -588,11 +589,7 @@ export default function Estimates() {
 
       {/* Estimates List */}
       {isLoading ? (
-        <Card>
-          <div className="flex items-center justify-center py-12">
-            <ArrowPathIcon className="w-8 h-8 text-slate-400 animate-spin" />
-          </div>
-        </Card>
+        <EstimatesSkeleton />
       ) : error ? (
         <EmptyState
           icon={<CalculatorIcon className="w-16 h-16" />}

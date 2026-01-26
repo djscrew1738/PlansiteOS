@@ -23,6 +23,7 @@ import {
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
 import BlueprintCardSkeleton from '../components/BlueprintCardSkeleton';
 import ErrorState from '../components/ui/ErrorState';
+import { BlueprintsSkeleton } from './BlueprintsSkeleton';
 import { useBlueprints, useUploadBlueprint, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
 import { blueprintsApi } from '../lib/api';
 import type { Blueprint, BlueprintStatus } from '../types/api';
@@ -625,13 +626,7 @@ export default function Blueprints() {
       </Card>
 
       {/* Loading State */}
-      {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <BlueprintCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+      {isLoading && <BlueprintsSkeleton />}
 
       {/* Error State */}
       {error && (

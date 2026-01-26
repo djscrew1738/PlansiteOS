@@ -26,6 +26,7 @@ import {
   ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
 import { useBids, useBlueprints } from '../hooks/useApi';
+import { ReportsSkeleton } from './ReportsSkeleton';
 
 // Chart colors
 const COLORS = {
@@ -40,8 +41,10 @@ const COLORS = {
 const PIE_COLORS = [COLORS.primary, COLORS.success, COLORS.warning, COLORS.danger, COLORS.purple];
 
 export default function Reports() {
-  const { data: bidsData } = useBids(1, 100);
-  const { data: blueprintsData } = useBlueprints(1, 100);
+  const { data: bidsData, isLoading: loadingBids } = useBids(1, 100);
+  const { data: blueprintsData, isLoading: loadingBlueprints } = useBlueprints(1, 100);
+
+  const isLoading = loadingBids || loadingBlueprints;
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -187,6 +190,10 @@ export default function Reports() {
 
     return Math.round(totalDays / closedBids.length);
   }, [bidsData]);
+
+  if (isLoading) {
+    return <ReportsSkeleton />;
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">
