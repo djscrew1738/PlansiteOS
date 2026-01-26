@@ -3,7 +3,7 @@ require('dotenv').config({ path: '../../../.env' });
 const app = require('./app');
 const logger = require('./platform/observability/logger');
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8090;
 const HOST = process.env.HOST || '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {

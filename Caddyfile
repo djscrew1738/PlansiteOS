@@ -7,7 +7,7 @@
 
   # API routes (Docker container)
   @api path /api/*
-  reverse_proxy @api node-api:5001
+  reverse_proxy @api node-api:8090
 
   # Health check endpoint
   @health path /health
@@ -73,7 +73,7 @@ app.ctlplumbingllc.com {
     }
 
     handle @api {
-      reverse_proxy node-api:5001 {
+      reverse_proxy node-api:8090 {
         header_down Access-Control-Allow-Origin "{http.request.header.origin}"
         header_down Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         header_down Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"

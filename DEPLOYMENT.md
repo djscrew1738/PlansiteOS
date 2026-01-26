@@ -68,7 +68,7 @@ Terminal 1 - API Server:
 cd apps/api
 npm install
 npm run dev
-# API runs on http://localhost:5001
+# API runs on http://localhost:8090
 ```
 
 Terminal 2 - Main Web App:
@@ -106,7 +106,7 @@ npm run dev
 
 - **Web App**: http://localhost:3000
 - **Blueprint Foundation**: http://localhost:5173
-- **API**: http://localhost:5001
+- **API**: http://localhost:8090
 - **MinIO Console**: http://localhost:9001 (user: minioadmin / minioadmin)
 - **Postgres**: localhost:5432 (user: plansite / plansite)
 
@@ -309,11 +309,11 @@ docker compose -f docker-compose.prod.yml up -d
 
 ### Port Already in Use
 ```bash
-# Check what's using port 5001
-sudo lsof -i :5001
+# Check what's using port 8090
+sudo lsof -i :8090
 
 # Or kill the process
-sudo kill $(sudo lsof -t -i:5001)
+sudo kill $(sudo lsof -t -i:8090)
 ```
 
 ### Database Connection Issues
@@ -366,7 +366,7 @@ docker compose -f docker-compose.prod.yml up -d service-name
 ```
 ┌─────────────────────────────────────┐
 │  apps/web (React)      :3000        │
-│  apps/api (Node)       :5001        │
+│  apps/api (Node)       :8090        │
 │  blueprint-foundation  :5173        │
 └─────────────────────────────────────┘
                  ↓
@@ -382,7 +382,7 @@ docker compose -f docker-compose.prod.yml up -d service-name
 ```
 Internet → Caddy (:80/:443) →
     ├→ Frontend (:4173) → React SPA
-    ├→ Node API (:5001) → Express Server
+    ├→ Node API (:8090) → Express Server
     │   ├→ PostgreSQL (internal)
     │   ├→ Redis (internal)
     │   └→ MinIO (internal)

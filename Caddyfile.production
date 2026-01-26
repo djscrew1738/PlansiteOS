@@ -1,0 +1,86 @@
+# PlansiteOS Production - Caddy Configuration
+# Serves app.ctlplumbingllc.com with automatic HTTPS
+
+app.ctlplumbingllc.com {
+  # Automatic HTTPS via Let's Encrypt
+  # Caddy will automatically obtain and renew SSL certificates
+
+  encode zstd gzip
+
+  # API routes - proxy to backend
+  @api path /api/*
+  reverse_proxy @api localhost:8090 {
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Forwarded-Proto {scheme}
+  }
+
+  # Health check endpoint
+  @health path /health
+  reverse_proxy @health localhost:8090
+
+  # Frontend - proxy to Vite preview or built static files
+  # Option 1: Proxy to running frontend server
+  reverse_proxy localhost:5173 {
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Forwarded-Proto {scheme}
+  }
+
+  # Option 2: Serve static files (uncomment if using built frontend)
+  # root * /home/user/PlansiteOS/frontend/dist
+  # file_server
+  # try_files {path} /index.html
+
+  # Security headers
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    X-XSS-Protection "1; mode=block"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    # Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  }
+
+  # Large file uploads for blueprints (200MB limit)
+  @upload path /api/blueprints/upload /api/projects/*/uploads
+  request_body @upload {
+    max_size 200MB
+  }
+
+  # Rate limiting for upload endpoint
+  @upload_endpoint path /api/blueprints/upload
+  rate_limit @upload_endpoint {
+    zone upload_zone 10r/m
+  }
+
+  # Access logs
+  log {
+    output file /var/log/caddy/access.log {
+      roll_size 100mb
+      roll_keep 5
+      roll_keep_days 30
+    }
+    format json
+    level INFO
+  }
+
+  # Error logs
+  handle_errors {
+    @5xx expression `{http.error.status_code} >= 500`
+    respond @5xx "Server Error: {http.error.status_text}" 500
+
+    @4xx expression `{http.error.status_code} >= 400 && {http.error.status_code} < 500`
+    respond @4xx "Client Error: {http.error.status_text}" {http.error.status_code}
+  }
+}
+
+# Redirect www to non-www
+www.app.ctlplumbingllc.com {
+  redir https://app.ctlplumbingllc.com{uri} permanent
+}
+
+# Optional: Main domain redirect to app subdomain
+ctlplumbingllc.com, www.ctlplumbingllc.com {
+  redir https://app.ctlplumbingllc.com{uri} permanent
+}

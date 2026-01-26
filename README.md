@@ -50,7 +50,7 @@ npm run dev
 ```
 
 **Frontend:** http://localhost:3000  
-**Backend:** http://localhost:5000
+**Backend:** http://localhost:8090
 
 ---
 
@@ -65,7 +65,7 @@ Create `.env` in root directory:
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 
 # Server
-PORT=5000
+PORT=8090
 NODE_ENV=development
 
 # Database (optional)

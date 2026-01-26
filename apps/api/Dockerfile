@@ -32,10 +32,10 @@ RUN chmod +x /entrypoint.sh
 
 USER root
 
-EXPOSE 5001
+EXPOSE 8090
 
 ENV NODE_ENV=production
-ENV PORT=5001
+ENV PORT=8090
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "src/server.js"]

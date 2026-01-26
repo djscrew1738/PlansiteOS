@@ -14,11 +14,11 @@ describe('repo configuration', () => {
     expect(contents).toContain("path.resolve(__dirname, '../../.env')");
   });
 
-  test('frontend base URL fallback targets port 5001', async () => {
+  test('frontend base URL fallback targets port 8090', async () => {
     const baseUrlPath = path.resolve(process.cwd(), '../../apps/web/src/api/baseUrl.js');
     const contents = await fs.readFile(baseUrlPath, 'utf8');
 
-    expect(contents).toContain("VITE_API_URL || 'http://localhost:5001'");
+    expect(contents).toContain("VITE_API_URL || 'http://localhost:8090'");
   });
 
   test('frontend defaults no longer reference port 5000', async () => {
