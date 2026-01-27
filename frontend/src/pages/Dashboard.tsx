@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
+import Badge, { BadgeVariant } from '../components/ui/Badge';
+import EmptyState from '../components/ui/EmptyState';
 import {
   WrenchScrewdriverIcon,
   DocumentTextIcon,
@@ -13,7 +14,9 @@ import {
   CloudArrowUpIcon,
   ArrowPathIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ClockIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useBids, useBlueprints, useHealth, useBidStatistics } from '../hooks/useApi';
@@ -35,6 +38,20 @@ const STAT_TEXT_COLORS: Record<string, string> = {
   green: 'text-green-500',
   purple: 'text-purple-500',
   red: 'text-red-500',
+};
+
+// Type-safe badge variant mappings
+const ACTIVITY_BADGE_VARIANTS: Record<string, BadgeVariant> = {
+  green: 'green',
+  red: 'red',
+  yellow: 'yellow',
+  blue: 'blue',
+  purple: 'purple',
+};
+
+const DEADLINE_BADGE_VARIANTS: Record<string, BadgeVariant> = {
+  urgent: 'red',
+  upcoming: 'yellow',
 };
 
 // Format relative time
@@ -188,24 +205,26 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">{stat.label}</p>
-                  <p className="text-3xl font-bold text-slate-100 mt-2">{stat.value}</p>
+      <section aria-label="Dashboard statistics">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={stat.label}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">{stat.label}</p>
+                    <p className="text-3xl font-bold text-slate-100 mt-2" aria-label={`${stat.label}: ${stat.value}`}>{stat.value}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${STAT_BG_COLORS[stat.color]}`} aria-hidden="true">
+                    <Icon className={`w-6 h-6 ${STAT_TEXT_COLORS[stat.color]}`} />
+                  </div>
                 </div>
-                <div className={`p-3 rounded-lg ${STAT_BG_COLORS[stat.color]}`}>
-                  <Icon className={`w-6 h-6 ${STAT_TEXT_COLORS[stat.color]}`} />
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Revenue Chart */}
       <Card>
@@ -213,9 +232,9 @@ export default function Dashboard() {
           <CardTitle>Revenue (Last 6 Months)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 mt-4">
+          <div className="h-64 mt-4" role="img" aria-label={`Revenue chart showing ${revenueData.map(d => `${d.month}: $${d.revenue.toLocaleString()}`).join(', ')}`}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData}>
+              <LineChart data={revenueData} aria-hidden="true">
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="month" stroke="#94a3b8" />
                 <YAxis stroke="#94a3b8" tickFormatter={(value) => `$${value / 1000}k`} />
@@ -225,9 +244,18 @@ export default function Dashboard() {
                   itemStyle={{ color: '#3b82f6' }}
                   formatter={(value: number) => `$${value.toLocaleString()}`}
                 />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} />
+                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} name="Revenue" />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+          {/* Screen reader accessible data summary */}
+          <div className="sr-only">
+            <h4>Revenue Data</h4>
+            <ul>
+              {revenueData.map((data) => (
+                <li key={data.month}>{data.month}: ${data.revenue.toLocaleString()}</li>
+              ))}
+            </ul>
           </div>
         </CardContent>
       </Card>
@@ -239,18 +267,26 @@ export default function Dashboard() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <Badge variant={activity.badge as any}>{activity.type}</Badge>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-200">{activity.title}</p>
-                    <p className="text-xs text-slate-400 mt-1">{activity.description}</p>
-                  </div>
-                  <span className="text-xs text-slate-500">{activity.time}</span>
-                </div>
-              ))}
-            </div>
+            {recentActivity.length > 0 ? (
+              <ul className="space-y-4" aria-label="Recent activity list">
+                {recentActivity.map((activity) => (
+                  <li key={activity.id} className="flex items-start space-x-3">
+                    <Badge variant={ACTIVITY_BADGE_VARIANTS[activity.badge] || 'slate'}>{activity.type}</Badge>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-200">{activity.title}</p>
+                      <p className="text-xs text-slate-400 mt-1">{activity.description}</p>
+                    </div>
+                    <time className="text-xs text-slate-500" aria-label={`${activity.time}`}>{activity.time}</time>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={BellIcon}
+                title="No recent activity"
+                description="Your recent estimates and blueprints will appear here."
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -260,19 +296,27 @@ export default function Dashboard() {
             <CardTitle>Upcoming Deadlines</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {upcomingDeadlines.map((deadline) => (
-                <div key={deadline.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                  <div>
-                    <p className="text-sm font-medium text-slate-200">{deadline.job}</p>
-                    <p className="text-xs text-slate-400 mt-1">{deadline.date}</p>
-                  </div>
-                  <Badge variant={deadline.status === 'urgent' ? 'red' : 'yellow'}>
-                    {deadline.status === 'urgent' ? 'Urgent' : 'Soon'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            {upcomingDeadlines.length > 0 ? (
+              <ul className="space-y-3" aria-label="Upcoming deadlines list">
+                {upcomingDeadlines.map((deadline) => (
+                  <li key={deadline.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">{deadline.job}</p>
+                      <time className="text-xs text-slate-400 mt-1 block">{deadline.date}</time>
+                    </div>
+                    <Badge variant={DEADLINE_BADGE_VARIANTS[deadline.status]}>
+                      {deadline.status === 'urgent' ? 'Urgent' : 'Soon'}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={ClockIcon}
+                title="No upcoming deadlines"
+                description="Pending estimates will appear here."
+              />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -284,32 +328,41 @@ export default function Dashboard() {
             <CardTitle>System Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
+            <ul className="flex flex-wrap gap-4" aria-label="System services status">
+              <li className="flex items-center gap-2">
                 {healthData.services.database.healthy ? (
-                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" aria-hidden="true" />
                 ) : (
-                  <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-500" aria-hidden="true" />
                 )}
-                <span className="text-sm text-slate-300">Database</span>
-              </div>
-              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-300">
+                  Database
+                  <span className="sr-only">: {healthData.services.database.healthy ? 'healthy' : 'unhealthy'}</span>
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
                 {healthData.services.ai.initialized ? (
-                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" aria-hidden="true" />
                 ) : (
-                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
                 )}
-                <span className="text-sm text-slate-300">AI Service</span>
-              </div>
-              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-300">
+                  AI Service
+                  <span className="sr-only">: {healthData.services.ai.initialized ? 'initialized' : 'not initialized'}</span>
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
                 {healthData.services.blueprints.initialized ? (
-                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" aria-hidden="true" />
                 ) : (
-                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" aria-hidden="true" />
                 )}
-                <span className="text-sm text-slate-300">Blueprint Processor</span>
-              </div>
-            </div>
+                <span className="text-sm text-slate-300">
+                  Blueprint Processor
+                  <span className="sr-only">: {healthData.services.blueprints.initialized ? 'initialized' : 'not initialized'}</span>
+                </span>
+              </li>
+            </ul>
           </CardContent>
         </Card>
       )}
@@ -320,46 +373,54 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <CardTitle>Quick Actions</CardTitle>
             <p className="text-xs text-slate-500">
-              Press <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-slate-800 border border-slate-700 rounded">?</kbd> for shortcuts
+              Press <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-slate-800 border border-slate-700 rounded" aria-label="question mark">?</kbd> for shortcuts
             </p>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link to="/blueprints">
-              <Button variant="primary" className="w-full justify-between">
-                <span className="flex items-center">
-                  <PlusIcon className="w-5 h-5 mr-2" />
-                  New Project
-                </span>
-                <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
-                  {getShortcutDisplay('mod+u')}
-                </kbd>
-              </Button>
-            </Link>
-            <Link to="/estimates">
-              <Button variant="secondary" className="w-full justify-between">
-                <span className="flex items-center">
-                  <CalculatorIcon className="w-5 h-5 mr-2" />
-                  Quick Estimate
-                </span>
-                <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
-                  {getShortcutDisplay('mod+n')}
-                </kbd>
-              </Button>
-            </Link>
-            <Link to="/blueprints">
-              <Button variant="secondary" className="w-full justify-between">
-                <span className="flex items-center">
-                  <CloudArrowUpIcon className="w-5 h-5 mr-2" />
-                  Upload Blueprint
-                </span>
-                <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
-                  {getShortcutDisplay('mod+u')}
-                </kbd>
-              </Button>
-            </Link>
-          </div>
+          <nav aria-label="Quick actions">
+            <ul className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <li>
+                <Link to="/blueprints" className="block">
+                  <Button variant="primary" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <PlusIcon className="w-5 h-5 mr-2" aria-hidden="true" />
+                      New Project
+                    </span>
+                    <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded" aria-label={`Keyboard shortcut: ${getShortcutDisplay('mod+u')}`}>
+                      {getShortcutDisplay('mod+u')}
+                    </kbd>
+                  </Button>
+                </Link>
+              </li>
+              <li>
+                <Link to="/estimates" className="block">
+                  <Button variant="secondary" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <CalculatorIcon className="w-5 h-5 mr-2" aria-hidden="true" />
+                      Quick Estimate
+                    </span>
+                    <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded" aria-label={`Keyboard shortcut: ${getShortcutDisplay('mod+n')}`}>
+                      {getShortcutDisplay('mod+n')}
+                    </kbd>
+                  </Button>
+                </Link>
+              </li>
+              <li>
+                <Link to="/blueprints" className="block">
+                  <Button variant="secondary" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <CloudArrowUpIcon className="w-5 h-5 mr-2" aria-hidden="true" />
+                      Upload Blueprint
+                    </span>
+                    <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded" aria-label={`Keyboard shortcut: ${getShortcutDisplay('mod+u')}`}>
+                      {getShortcutDisplay('mod+u')}
+                    </kbd>
+                  </Button>
+                </Link>
+              </li>
+            </ul>
+          </nav>
         </CardContent>
       </Card>
     </div>
