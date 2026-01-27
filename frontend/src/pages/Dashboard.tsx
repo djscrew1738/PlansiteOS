@@ -20,6 +20,23 @@ import { useBids, useBlueprints, useHealth, useBidStatistics } from '../hooks/us
 import { getShortcutDisplay } from '../hooks/useKeyboard';
 import { DashboardSkeleton } from './DashboardSkeleton';
 
+// Static color class mappings (Tailwind requires full class names at build time)
+const STAT_BG_COLORS: Record<string, string> = {
+  blue: 'bg-blue-500/10',
+  yellow: 'bg-yellow-500/10',
+  green: 'bg-green-500/10',
+  purple: 'bg-purple-500/10',
+  red: 'bg-red-500/10',
+};
+
+const STAT_TEXT_COLORS: Record<string, string> = {
+  blue: 'text-blue-500',
+  yellow: 'text-yellow-500',
+  green: 'text-green-500',
+  purple: 'text-purple-500',
+  red: 'text-red-500',
+};
+
 // Format relative time
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -181,8 +198,8 @@ export default function Dashboard() {
                   <p className="text-sm text-slate-400">{stat.label}</p>
                   <p className="text-3xl font-bold text-slate-100 mt-2">{stat.value}</p>
                 </div>
-                <div className={`p-3 rounded-lg bg-${stat.color}-500/10`}>
-                  <Icon className={`w-6 h-6 text-${stat.color}-500`} />
+                <div className={`p-3 rounded-lg ${STAT_BG_COLORS[stat.color]}`}>
+                  <Icon className={`w-6 h-6 ${STAT_TEXT_COLORS[stat.color]}`} />
                 </div>
               </div>
             </Card>
