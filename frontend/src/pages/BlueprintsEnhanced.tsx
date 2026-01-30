@@ -201,7 +201,7 @@ export default function BlueprintsEnhanced() {
   const handleGenerateBid = async (id: string) => {
     setGeneratingBidId(id);
     try {
-      const result = await generateBidMutation.mutateAsync(id);
+      const result = await generateBidMutation.mutateAsync({ blueprintId: id });
       toast.success('Bid Generated', 'Navigate to estimates to view the bid');
       setTimeout(() => navigate(`/estimates`), 1500);
     } catch (err) {

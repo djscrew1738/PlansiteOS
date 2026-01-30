@@ -175,7 +175,7 @@ export default function Estimates() {
 
     try {
       const deletePromises = Array.from(selectedEstimates).map(id =>
-        deleteBid.mutateAsync(String(id))
+        deleteBid.mutateAsync(id)
       );
       await Promise.all(deletePromises);
       toast.success('Estimates deleted', `${selectedEstimates.size} estimate(s) removed`);
@@ -957,7 +957,7 @@ export default function Estimates() {
 
                 for (const bid of estimatesWithEmail) {
                   try {
-                    await updateStatus.mutateAsync({ id: String(bid.id), status: 'sent' });
+                    await updateStatus.mutateAsync({ id: bid.id, status: 'sent' });
                   } catch (err) {
                     console.error(`Failed to send estimate ${bid.id}`, err);
                   }

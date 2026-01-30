@@ -66,7 +66,7 @@ export function useUploadBlueprint() {
 
 export function useDeleteBlueprint() {
   const queryClient = useQueryClient();
-  return useMutation<{ success: boolean; message: string }, ApiError, string>({
+  return useMutation<{ success: boolean; message: string }, ApiError, string, { previousBlueprints?: BlueprintsListResponse }>({
     mutationFn: (id) => api.blueprints.delete(id),
     onMutate: async (deletedId) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -76,10 +76,12 @@ export function useDeleteBlueprint() {
       const previousBlueprints = queryClient.getQueryData<BlueprintsListResponse>(queryKeys.blueprints);
 
       // Optimistically update to the new value
-      queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, (old) => ({
-        ...old,
-        blueprints: old?.blueprints.filter((bp) => bp.id !== deletedId) || [],
-      }));
+      if (previousBlueprints) {
+        queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, {
+          ...previousBlueprints,
+          blueprints: previousBlueprints.blueprints.filter((bp) => bp.id !== deletedId),
+        });
+      }
 
       // Return a context object with the snapshotted value
       return { previousBlueprints };
@@ -213,35 +215,52 @@ export interface Page {
   pageNumber: number;
   imageUrl: string;
   status: 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
+  widthPx?: number;
+  heightPx?: number;
+  dpiEstimated?: number;
+}
+
+export interface UploadProgress {
+  steps: string[];
+  current: string;
 }
 
 export interface Upload {
   id: string;
   projectName: string;
+  originalFilename: string;
+  sizeBytes: number;
+  mimeType: string;
   status: 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
   pages: Page[];
   totalFixtures: number;
   createdAt: string;
+  progress?: UploadProgress;
+  errorMessage?: string;
+  warnings?: Record<string, unknown>;
 }
 
 // Convert Blueprint to Upload format for viewer compatibility
 function blueprintToUpload(blueprint: Blueprint): Upload {
+  const uploadStatus = blueprint.status === 'completed' ? 'READY' :
+                       blueprint.status === 'failed' ? 'FAILED' :
+                       blueprint.status === 'processing' ? 'PROCESSING' : 'UPLOADED';
   return {
     id: blueprint.id,
     projectName: blueprint.project_name,
-    status: blueprint.status === 'completed' ? 'READY' :
-            blueprint.status === 'failed' ? 'FAILED' :
-            blueprint.status === 'processing' ? 'PROCESSING' : 'UPLOADED',
+    originalFilename: blueprint.file_name,
+    sizeBytes: blueprint.file_size,
+    mimeType: blueprint.file_type,
+    status: uploadStatus,
     pages: [{
       id: blueprint.id,
       pageNumber: 1,
       imageUrl: blueprint.file_path,
-      status: blueprint.status === 'completed' ? 'READY' :
-              blueprint.status === 'failed' ? 'FAILED' :
-              blueprint.status === 'processing' ? 'PROCESSING' : 'UPLOADED',
+      status: uploadStatus,
     }],
     totalFixtures: blueprint.total_fixtures,
     createdAt: blueprint.created_at,
+    errorMessage: blueprint.error_message || undefined,
   };
 }
 
@@ -261,9 +280,10 @@ export function useUploadPolling(uploadId: string) {
       return blueprintToUpload(result.blueprint);
     },
     enabled: !!uploadId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Stop polling once processing is complete
-      if (data?.status === 'READY' || data?.status === 'FAILED') {
+      const status = query.state.data?.status;
+      if (status === 'READY' || status === 'FAILED') {
         return false;
       }
       return 2000; // Poll every 2 seconds while processing

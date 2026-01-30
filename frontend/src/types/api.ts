@@ -202,6 +202,28 @@ export interface Page {
   pageNumber: number;
   imageUrl: string;
   status: 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
+  widthPx?: number;
+  heightPx?: number;
+  dpiEstimated?: number;
+}
+
+// Upload progress step
+export interface UploadProgress {
+  steps: string[];
+  current: string;
+}
+
+// Upload type for blueprint upload tracking
+export interface Upload {
+  id: string;
+  originalFilename: string;
+  sizeBytes: number;
+  mimeType: string;
+  status: 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
+  pages: Page[];
+  progress?: UploadProgress;
+  errorMessage?: string;
+  warnings?: Record<string, unknown>;
 }
 
 export interface Calibration {

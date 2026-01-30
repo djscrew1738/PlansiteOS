@@ -34,7 +34,7 @@ export function useSelection(type: ResourceType) {
   return {
     selected: current.selected,
     count: current.selected.size,
-    isSelected: (id: number) => current.selected.has(id),
+    isSelected: (id: string) => current.selected.has(id),
     toggle: current.toggle,
     selectAll: current.selectAll,
     clear: current.clear,

@@ -19,6 +19,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: { steps: [], currentStep: 0, onStepChange: () => {} },
   render: () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState({
@@ -50,7 +51,7 @@ export const Default: Story = {
             />
           </div>
         ),
-        isValid: formData.name && formData.email,
+        isValid: Boolean(formData.name && formData.email),
       },
       {
         title: 'Company',
@@ -70,7 +71,7 @@ export const Default: Story = {
             />
           </div>
         ),
-        isValid: formData.company,
+        isValid: Boolean(formData.company),
       },
       {
         title: 'Plan',
@@ -147,6 +148,7 @@ export const Default: Story = {
 };
 
 export const WithCompletedSteps: Story = {
+  args: { steps: [], currentStep: 0, onStepChange: () => {} },
   render: () => {
     const [currentStep, setCurrentStep] = useState(2);
     const [completedSteps, setCompletedSteps] = useState([0, 1]);

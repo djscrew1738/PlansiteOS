@@ -19,6 +19,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const SingleColumn: Story = {
+  args: { title: 'Create Project' },
   render: () => {
     const [loading, setLoading] = useState(false);
 
@@ -51,6 +52,7 @@ export const SingleColumn: Story = {
 };
 
 export const TwoColumn: Story = {
+  args: { title: 'User Profile' },
   render: () => (
     <div className="p-8">
       <FormLayout
@@ -71,6 +73,7 @@ export const TwoColumn: Story = {
 };
 
 export const WithSections: Story = {
+  args: { title: 'Settings' },
   render: () => {
     const [notifications, setNotifications] = useState(true);
     const [newsletter, setNewsletter] = useState(false);
@@ -139,6 +142,7 @@ export const WithSections: Story = {
 };
 
 export const TwoColumnSections: Story = {
+  args: { title: 'New Estimate' },
   render: () => (
     <div className="p-8">
       <FormLayout

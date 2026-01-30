@@ -147,16 +147,19 @@ export default function PageViewer() {
     }
 
     try {
+      // Calculate pixel distance between the two points
+      const dx = points[1].x - points[0].x;
+      const dy = points[1].y - points[0].y;
+      const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+      const realDist = Number(distance);
+      const pixelsPerUnit = pixelDistance / realDist;
+
       await setCalibrationMutation.mutateAsync({
         pageId,
-        data: {
-          p1x: Math.round(points[0].x),
-          p1y: Math.round(points[0].y),
-          p2x: Math.round(points[1].x),
-          p2y: Math.round(points[1].y),
-          realDistance: Number(distance),
-          realUnit: unit,
-        },
+        pixelDistance,
+        realDistance: realDist,
+        realUnit: unit,
+        pixelsPerUnit,
       });
       toast.success('Calibration saved', `Scale: ${distance} ${unit.toLowerCase()}`);
       refetchCalibration();

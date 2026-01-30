@@ -184,6 +184,11 @@ export const pagesApi = {
     return `${API_BASE}/api/blueprints/${pageId}/image`;
   },
 
+  // Get thumbnail URL for a page
+  thumbUrl: (pageId: string): string => {
+    return `${API_BASE}/api/blueprints/${pageId}/thumb`;
+  },
+
   // Get calibration data (stored in localStorage for now)
   getCalibration: (pageId: string): { pixelDistance: number; realDistance: number; realUnit: string } | null => {
     const stored = localStorage.getItem(`calibration-${pageId}`);

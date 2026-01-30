@@ -169,7 +169,7 @@ export default function Dashboard() {
       id: bid.id,
       job: bid.project_name,
       date: new Date(bid.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      status: 'upcoming' as const,
+      status: 'upcoming' as 'upcoming' | 'urgent',
     }));
   }, [bidsData]);
 
@@ -223,7 +223,7 @@ export default function Dashboard() {
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                   labelStyle={{ color: '#e2e8f0' }}
                   itemStyle={{ color: '#3b82f6' }}
-                  formatter={(value: number) => `$${value.toLocaleString()}`}
+                  formatter={(value) => `$${(value ?? 0).toLocaleString()}`}
                 />
                 <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} />
               </LineChart>

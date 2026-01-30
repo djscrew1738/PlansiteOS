@@ -2,23 +2,23 @@ import { create } from 'zustand';
 
 interface SelectionState {
   // Selected items by resource type
-  selectedEstimates: Set<number>;
-  selectedBlueprints: Set<number>;
-  selectedLeads: Set<number>;
+  selectedEstimates: Set<string>;
+  selectedBlueprints: Set<string>;
+  selectedLeads: Set<string>;
 
   // Actions for estimates
-  toggleEstimate: (id: number) => void;
-  selectAllEstimates: (ids: number[]) => void;
+  toggleEstimate: (id: string) => void;
+  selectAllEstimates: (ids: string[]) => void;
   clearEstimates: () => void;
 
   // Actions for blueprints
-  toggleBlueprint: (id: number) => void;
-  selectAllBlueprints: (ids: number[]) => void;
+  toggleBlueprint: (id: string) => void;
+  selectAllBlueprints: (ids: string[]) => void;
   clearBlueprints: () => void;
 
   // Actions for leads
-  toggleLead: (id: number) => void;
-  selectAllLeads: (ids: number[]) => void;
+  toggleLead: (id: string) => void;
+  selectAllLeads: (ids: string[]) => void;
   clearLeads: () => void;
 
   // Clear all selections

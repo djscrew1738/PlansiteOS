@@ -85,13 +85,18 @@ export default function EstimatesEnhanced() {
   }, [bidsData]);
 
   const getStatusBadge = (status: BidStatus) => {
-    const badges = {
-      draft: { variant: 'slate' as const, label: 'Draft' },
-      sent: { variant: 'blue' as const, label: 'Sent' },
-      accepted: { variant: 'green' as const, label: 'Accepted' },
-      rejected: { variant: 'red' as const, label: 'Rejected' },
+    const badges: Record<BidStatus, { variant: 'slate' | 'blue' | 'green' | 'red' | 'yellow' | 'purple'; label: string }> = {
+      draft: { variant: 'slate', label: 'Draft' },
+      pending_review: { variant: 'yellow', label: 'Pending Review' },
+      approved: { variant: 'green', label: 'Approved' },
+      sent: { variant: 'blue', label: 'Sent' },
+      viewed: { variant: 'purple', label: 'Viewed' },
+      accepted: { variant: 'green', label: 'Accepted' },
+      rejected: { variant: 'red', label: 'Rejected' },
+      expired: { variant: 'slate', label: 'Expired' },
+      archived: { variant: 'slate', label: 'Archived' },
     };
-    return badges[status] || badges.draft;
+    return badges[status];
   };
 
   if (isLoading) return <EstimatesSkeleton />;

@@ -290,7 +290,7 @@ export default function Reports() {
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                     labelStyle={{ color: '#e2e8f0' }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`$${(value ?? 0).toLocaleString()}`, 'Revenue']}
                   />
                   <Line type="monotone" dataKey="revenue" stroke={COLORS.primary} strokeWidth={2} dot={{ fill: COLORS.primary }} />
                 </LineChart>
@@ -313,7 +313,7 @@ export default function Reports() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -378,7 +378,7 @@ export default function Reports() {
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                       labelStyle={{ color: '#e2e8f0' }}
-                      formatter={(value: number) => [value, 'Count']}
+                      formatter={(value) => [value ?? 0, 'Count']}
                     />
                     <Bar dataKey="count" fill={COLORS.success} radius={[0, 4, 4, 0]} />
                   </BarChart>
