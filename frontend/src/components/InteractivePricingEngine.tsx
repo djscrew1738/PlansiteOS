@@ -1,6 +1,7 @@
 /**
  * Interactive Pricing Engine - What-If Simulator
  * Real-time estimate adjustments with visual feedback
+ * Uses DFW market data (2025) for accurate pricing
  */
 import { useState, useMemo } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -13,7 +14,17 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
+import {
+  LABOR_RATES,
+  PIPE_MATERIAL_FACTORS,
+  FIXTURE_PRICING,
+  CREW_EFFICIENCY,
+  getPricingRecommendation,
+  type FixtureTier,
+  type PipeMaterial,
+} from '../lib/pricing';
 
 interface LineItem {
   id: string;
@@ -21,59 +32,60 @@ interface LineItem {
   quantity: number;
   laborHours: number;
   materialCost: number;
+  fixtureType?: string; // Optional: toilet, faucet, sink, etc.
 }
 
 interface PricingEngineProps {
   items: LineItem[];
   projectName: string;
+  projectSqft?: number;
+  foundationType?: 'slab' | 'crawlspace' | 'basement';
   onEstimateUpdate?: (estimate: any) => void;
 }
-
-type FixtureGrade = 'builder' | 'mid' | 'premium';
-type PipeMaterial = 'pex' | 'copper' | 'cpvc';
 
 export default function InteractivePricingEngine({
   items,
   projectName,
+  projectSqft,
+  foundationType = 'slab',
   onEstimateUpdate,
 }: PricingEngineProps) {
-  // Adjustable parameters
-  const [laborRate, setLaborRate] = useState(75); // $/hour
+  // Adjustable parameters - Using DFW market averages as defaults
+  const [laborRate, setLaborRate] = useState(LABOR_RATES.average); // $/hour (DFW average: $125)
   const [materialMarkup, setMaterialMarkup] = useState(25); // %
   const [builderDiscount, setBuilderDiscount] = useState(0); // %
-  const [fixtureGrade, setFixtureGrade] = useState<FixtureGrade>('builder');
+  const [fixtureTier, setFixtureTier] = useState<FixtureTier>('basic');
   const [pipeMaterial, setPipeMaterial] = useState<PipeMaterial>('pex');
   const [crewSize, setCrewSize] = useState<1 | 2>(2);
 
-  // Grade multipliers
-  const gradeMultipliers: Record<FixtureGrade, number> = {
-    builder: 1.0,
-    mid: 1.35,
-    premium: 1.85,
-  };
+  // Use real DFW market data
+  const tierMultipliers = useMemo(() => {
+    const basic = (FIXTURE_PRICING.basic.min + FIXTURE_PRICING.basic.max) / 2;
+    return {
+      basic: 1.0,
+      standard: ((FIXTURE_PRICING.standard.min + FIXTURE_PRICING.standard.max) / 2) / basic,
+      premium: ((FIXTURE_PRICING.premium.min + FIXTURE_PRICING.premium.max) / 2) / basic,
+    };
+  }, []);
 
-  // Material multipliers
-  const materialMultipliers: Record<PipeMaterial, { cost: number; labor: number }> = {
-    pex: { cost: 1.0, labor: 1.0 },
-    copper: { cost: 2.8, labor: 1.4 },
-    cpvc: { cost: 1.3, labor: 1.1 },
-  };
+  // Material factors from market data
+  const materialMultipliers = PIPE_MATERIAL_FACTORS;
 
-  // Crew efficiency
-  const crewEfficiency = crewSize === 2 ? 0.7 : 1.0; // 2-man crew is 30% faster
+  // Crew efficiency from market data
+  const crewEfficiency = crewSize === 2 ? CREW_EFFICIENCY.twoMan.multiplier : CREW_EFFICIENCY.oneMan.multiplier;
 
-  // Calculate totals
+  // Calculate totals using DFW market data
   const calculated = useMemo(() => {
     let totalLabor = 0;
     let totalMaterial = 0;
 
     items.forEach(item => {
-      // Labor cost with crew efficiency
+      // Labor cost with crew efficiency and material factor
       const adjustedHours = item.laborHours * materialMultipliers[pipeMaterial].labor * crewEfficiency;
       const laborCost = adjustedHours * laborRate * item.quantity;
 
-      // Material cost with markup and grade
-      const baseMaterial = item.materialCost * materialMultipliers[pipeMaterial].cost * gradeMultipliers[fixtureGrade];
+      // Material cost with markup and tier multiplier
+      const baseMaterial = item.materialCost * materialMultipliers[pipeMaterial].cost * tierMultipliers[fixtureTier];
       const materialWithMarkup = baseMaterial * (1 + materialMarkup / 100);
 
       totalLabor += laborCost;
@@ -83,7 +95,7 @@ export default function InteractivePricingEngine({
     const subtotal = totalLabor + totalMaterial;
     const discountAmount = subtotal * (builderDiscount / 100);
     const total = subtotal - discountAmount;
-    const margin = ((total - totalMaterial) / total) * 100;
+    const margin = total > 0 ? ((total - totalMaterial) / total) * 100 : 0;
 
     return {
       labor: totalLabor,
@@ -92,12 +104,15 @@ export default function InteractivePricingEngine({
       discount: discountAmount,
       total,
       margin,
+      fixtureCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      averageCostPerFixture: total / items.reduce((sum, item) => sum + item.quantity, 0),
     };
-  }, [items, laborRate, materialMarkup, builderDiscount, fixtureGrade, pipeMaterial, crewSize]);
+  }, [items, laborRate, materialMarkup, builderDiscount, fixtureTier, pipeMaterial, crewSize, tierMultipliers, materialMultipliers, crewEfficiency]);
 
-  // Margin health indicator
-  const marginHealth = calculated.margin >= 40 ? 'excellent' : calculated.margin >= 30 ? 'good' : calculated.margin >= 20 ? 'fair' : 'poor';
-  const marginColor = marginHealth === 'excellent' ? 'text-green-500' : marginHealth === 'good' ? 'text-blue-500' : marginHealth === 'fair' ? 'text-yellow-500' : 'text-red-500';
+  // Margin health indicator using DFW market standards
+  const pricingRec = getPricingRecommendation(calculated.margin);
+  const marginHealth = pricingRec.status;
+  const marginColor = `text-${pricingRec.color}-500`;
 
   // Chart data
   const pieData = [
@@ -135,7 +150,10 @@ export default function InteractivePricingEngine({
           {/* Labor Rate */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Labor Rate</CardTitle>
+              <CardTitle className="text-sm flex items-center justify-between">
+                Labor Rate
+                <span className="text-xs font-normal text-slate-400">DFW: ${LABOR_RATES.min}-${LABOR_RATES.max}</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -145,16 +163,17 @@ export default function InteractivePricingEngine({
                 </div>
                 <input
                   type="range"
-                  min="50"
-                  max="150"
+                  min={LABOR_RATES.min}
+                  max={LABOR_RATES.max}
                   step="5"
                   value={laborRate}
                   onChange={(e) => setLaborRate(Number(e.target.value))}
                   className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
                 />
                 <div className="flex justify-between text-xs text-slate-400">
-                  <span>$50</span>
-                  <span>$150</span>
+                  <span>${LABOR_RATES.min}</span>
+                  <span className="text-blue-400">${LABOR_RATES.average} avg</span>
+                  <span>${LABOR_RATES.max}</span>
                 </div>
               </div>
             </CardContent>
@@ -221,24 +240,28 @@ export default function InteractivePricingEngine({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Fixture Grade */}
+                {/* Fixture Tier */}
                 <div>
-                  <label className="text-xs text-slate-400 mb-2 block">Fixture Grade</label>
+                  <label className="text-xs text-slate-400 mb-2 block">
+                    Fixture Tier
+                    <span className="ml-2 text-slate-500">($600-$950 | $950-$1,600 | $1,800-$3,500)</span>
+                  </label>
                   <div className="grid grid-cols-3 gap-2">
-                    {(['builder', 'mid', 'premium'] as FixtureGrade[]).map(grade => (
+                    {(['basic', 'standard', 'premium'] as FixtureTier[]).map(tier => (
                       <button
-                        key={grade}
-                        onClick={() => setFixtureGrade(grade)}
+                        key={tier}
+                        onClick={() => setFixtureTier(tier)}
                         className={`px-3 py-2 rounded text-xs font-medium transition-colors ${
-                          fixtureGrade === grade
+                          fixtureTier === tier
                             ? 'bg-blue-500 text-white'
                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                         }`}
                       >
-                        {grade === 'mid' ? 'Mid-Grade' : grade.charAt(0).toUpperCase() + grade.slice(1)}
+                        {tier.charAt(0).toUpperCase() + tier.slice(1)}
                       </button>
                     ))}
                   </div>
+                  <p className="text-xs text-slate-500 mt-2">{FIXTURE_PRICING[fixtureTier].description}</p>
                 </div>
 
                 {/* Pipe Material */}
@@ -249,6 +272,7 @@ export default function InteractivePricingEngine({
                       <button
                         key={material}
                         onClick={() => setPipeMaterial(material)}
+                        title={PIPE_MATERIAL_FACTORS[material].description}
                         className={`px-3 py-2 rounded text-xs font-medium uppercase transition-colors ${
                           pipeMaterial === material
                             ? 'bg-green-500 text-white'
@@ -259,6 +283,12 @@ export default function InteractivePricingEngine({
                       </button>
                     ))}
                   </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {PIPE_MATERIAL_FACTORS[pipeMaterial].description}
+                    <br />
+                    <span className="text-blue-400">Cost: {(PIPE_MATERIAL_FACTORS[pipeMaterial].cost * 100).toFixed(0)}%</span> •
+                    <span className="text-green-400 ml-1">Labor: {(PIPE_MATERIAL_FACTORS[pipeMaterial].labor * 100).toFixed(0)}%</span>
+                  </p>
                 </div>
 
                 {/* Crew Size */}
@@ -452,19 +482,57 @@ export default function InteractivePricingEngine({
             </CardHeader>
             <CardContent>
               <div className="space-y-3 text-sm">
-                {calculated.margin < 25 && (
-                  <div className="p-2 bg-red-500/10 border border-red-500/20 rounded">
-                    <p className="text-red-300">⚠️ Margin below target. Consider +$5/hr labor rate.</p>
-                  </div>
-                )}
+                {/* Margin Health Insight */}
+                <div className={`p-2 border rounded bg-${pricingRec.color}-500/10 border-${pricingRec.color}-500/20`}>
+                  <p className={`text-${pricingRec.color}-300`}>
+                    {marginHealth === 'poor' && '⚠️ '}
+                    {marginHealth === 'excellent' && '✓ '}
+                    {pricingRec.message}
+                  </p>
+                </div>
+
+                {/* Per-Fixture Cost Benchmark */}
+                <div className="p-2 bg-slate-800 rounded border border-slate-700">
+                  <p className="text-slate-300">
+                    <InformationCircleIcon className="w-4 h-4 inline mr-1" />
+                    <strong>${calculated.averageCostPerFixture.toFixed(0)}/fixture</strong>
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    DFW {fixtureTier} range: ${FIXTURE_PRICING[fixtureTier].min}-${FIXTURE_PRICING[fixtureTier].max}
+                  </p>
+                </div>
+
+                {/* Pipe Material Savings */}
                 {pipeMaterial === 'pex' && (
                   <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded">
-                    <p className="text-blue-300">💡 PEX saves 40% vs copper on material and 30% on labor</p>
+                    <p className="text-blue-300">
+                      💡 PEX saves 64% vs copper on material and 29% on labor (DFW data)
+                    </p>
                   </div>
                 )}
-                {crewSize === 1 && (
+                {pipeMaterial === 'copper' && calculated.fixtureCount > 10 && (
                   <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded">
-                    <p className="text-yellow-300">⏱️ 2-man crew could save {Math.round(calculated.labor / laborRate * 0.3)} hours</p>
+                    <p className="text-yellow-300">
+                      💰 Copper adds ${Math.round((calculated.material * 1.8))} vs PEX. Consider for luxury jobs only.
+                    </p>
+                  </div>
+                )}
+
+                {/* Crew Efficiency */}
+                {crewSize === 1 && calculated.fixtureCount > 5 && (
+                  <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded">
+                    <p className="text-yellow-300">
+                      ⏱️ 2-man crew saves {Math.round(calculated.labor / laborRate * CREW_EFFICIENCY.twoMan.efficiency)} hours ({CREW_EFFICIENCY.twoMan.efficiency * 100}% efficiency)
+                    </p>
+                  </div>
+                )}
+
+                {/* DFW Slab Foundation Note */}
+                {foundationType === 'slab' && (
+                  <div className="p-2 bg-slate-800 rounded border border-slate-700">
+                    <p className="text-xs text-slate-400">
+                      <strong className="text-slate-300">DFW Note:</strong> Slab foundation. Fixture relocation adds $1,000-$2,500 (jackhammer required).
+                    </p>
                   </div>
                 )}
               </div>
