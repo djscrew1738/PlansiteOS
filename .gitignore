@@ -1,4 +1,5 @@
 node_modules/
+dist/
 frontend/dist/
 apps/web/dist/
 apps/blueprint-foundation/frontend/dist/
