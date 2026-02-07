@@ -13,6 +13,7 @@ const Estimates = lazy(() => import('./pages/Estimates'));
 const Leads = lazy(() => import('./pages/Leads'));
 const Messages = lazy(() => import('./pages/Messages'));
 const Reports = lazy(() => import('./pages/Reports'));
+const PricingTool = lazy(() => import('./pages/PricingTool'));
 
 export default function App() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/leads" element={<Leads />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/pricing" element={<PricingTool />} />
           </Routes>
         </Suspense>
       </Layout>

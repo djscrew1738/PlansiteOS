@@ -5,7 +5,8 @@ import {
   CalculatorIcon,
   UserGroupIcon,
   ChatBubbleLeftRightIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -13,7 +14,8 @@ import {
   CalculatorIcon as CalculatorIconSolid,
   UserGroupIcon as UserGroupIconSolid,
   ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
-  ChartBarIcon as ChartBarIconSolid
+  ChartBarIcon as ChartBarIconSolid,
+  CurrencyDollarIcon as CurrencyDollarIconSolid
 } from '@heroicons/react/24/solid';
 import { getShortcutDisplay } from '../../hooks/useKeyboard';
 
@@ -21,6 +23,7 @@ const tabs = [
   { path: '/', label: 'Dashboard', icon: HomeIcon, iconSolid: HomeIconSolid },
   { path: '/blueprints', label: 'Blueprints', icon: DocumentTextIcon, iconSolid: DocumentTextIconSolid },
   { path: '/estimates', label: 'Estimates', icon: CalculatorIcon, iconSolid: CalculatorIconSolid },
+  { path: '/pricing', label: 'Pricing', icon: CurrencyDollarIcon, iconSolid: CurrencyDollarIconSolid },
   { path: '/leads', label: 'Leads', icon: UserGroupIcon, iconSolid: UserGroupIconSolid },
   { path: '/reports', label: 'Reports', icon: ChartBarIcon, iconSolid: ChartBarIconSolid },
   { path: '/messages', label: 'Messages', icon: ChatBubbleLeftRightIcon, iconSolid: ChatBubbleLeftRightIconSolid }
@@ -33,7 +36,7 @@ export default function TabBar() {
     <>
       {/* Mobile Bottom Tab Bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40">
-        <div className="grid grid-cols-6 h-16">
+        <div className="grid grid-cols-7 h-16">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
             const Icon = isActive ? tab.iconSolid : tab.icon;
