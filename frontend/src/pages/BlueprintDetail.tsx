@@ -97,16 +97,16 @@ export default function BlueprintDetail() {
   const statusInfo = statusBadges[blueprint.status] || { variant: 'blue', label: blueprint.status };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/blueprints')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/blueprints')}>
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-slate-100">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-50">
                 {blueprint.project_name || blueprint.file_name}
               </h1>
               <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>

@@ -14,11 +14,13 @@ export default function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <Card className="border-red-500/50 bg-red-500/10 text-center">
-      <div className="p-6">
-        <ExclamationTriangleIcon className="w-12 h-12 text-red-400 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-red-300">{title}</h3>
-        <p className="text-red-400/80 mt-2">{message}</p>
+    <Card className="border-red-500/20 bg-red-500/[0.04] text-center animate-fadeIn">
+      <div className="py-8 px-6">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
+          <ExclamationTriangleIcon className="h-7 w-7 text-red-400" />
+        </div>
+        <h3 className="text-lg font-semibold tracking-tight text-red-300">{title}</h3>
+        <p className="mt-2 text-sm text-red-400/70 max-w-sm mx-auto leading-relaxed">{message}</p>
         {onRetry && (
           <Button variant="secondary" size="sm" onClick={onRetry} className="mt-6">
             Try Again
