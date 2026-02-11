@@ -14,6 +14,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@pipelineos/ai-core": "file:../../packages_temp/ai-core",
+    "@pipelineos/db": "file:../../packages_temp/db",
     "@anthropic-ai/sdk": "^0.71.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
