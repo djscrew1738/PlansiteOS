@@ -114,9 +114,9 @@ export default function Messages() {
 
   return (
     <div className="space-y-6 animate-fadeIn lg:space-y-0">
-      <div className="lg:hidden mb-4">
-        <h1 className="text-2xl font-bold text-slate-100">Messages</h1>
-        <p className="text-slate-400 mt-1">Chat with builders and homeowners</p>
+      <div className="lg:hidden mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-50">Messages</h1>
+        <p className="text-sm text-slate-400 mt-1.5">Chat with builders and homeowners</p>
       </div>
 
       <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:h-[calc(100vh-8rem)]">
@@ -124,23 +124,23 @@ export default function Messages() {
         <div className={`lg:col-span-4 ${activeConversation ? 'hidden lg:block' : 'block'}`}>
           <Card className="h-full flex flex-col">
             {/* Search & Filters */}
-            <div className="p-4 border-b border-slate-800 space-y-3">
+            <div className="p-4 border-b border-slate-800/60 space-y-3">
               <div className="hidden lg:block">
-                <h1 className="text-xl font-bold text-slate-100">Messages</h1>
+                <h1 className="text-lg font-bold tracking-tight text-slate-50">Messages</h1>
               </div>
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input placeholder="Search conversations..." className="pl-10" />
               </div>
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-1 overflow-x-auto">
                 {(['all', 'unread', 'builders', 'homeowners'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setFilterType(filter)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                       filterType === filter
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-blue-500/15 text-blue-400 shadow-sm shadow-blue-500/10'
+                        : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                     }`}
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -220,16 +220,16 @@ export default function Messages() {
                       className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[75%] sm:max-w-md rounded-lg p-3 ${
+                        className={`max-w-[75%] sm:max-w-md p-3.5 ${
                           message.sender === 'me'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-800 text-slate-100'
+                            ? 'rounded-2xl rounded-br-md bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/15'
+                            : 'rounded-2xl rounded-bl-md bg-slate-800/70 text-slate-100 border border-slate-700/40'
                         }`}
                       >
-                        <p className="text-sm">{message.text}</p>
+                        <p className="text-sm leading-relaxed">{message.text}</p>
                         <p
-                          className={`text-xs mt-1 ${
-                            message.sender === 'me' ? 'text-blue-200' : 'text-slate-500'
+                          className={`text-[10px] mt-1.5 ${
+                            message.sender === 'me' ? 'text-blue-200/70' : 'text-slate-500'
                           }`}
                         >
                           {message.timestamp}
@@ -240,13 +240,13 @@ export default function Messages() {
                 </div>
 
                 {/* Quick Replies */}
-                <div className="px-4 py-2 border-t border-slate-800">
-                  <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="px-4 py-2.5 border-t border-slate-800/60">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1">
                     {quickReplies.map((reply, i) => (
                       <button
                         key={i}
                         onClick={() => setMessageInput(reply)}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-full whitespace-nowrap transition-colors"
+                        className="px-3 py-1.5 bg-slate-800/50 hover:bg-slate-700/60 text-slate-400 hover:text-slate-200 text-[11px] font-medium rounded-full whitespace-nowrap transition-all duration-200 border border-slate-700/40"
                       >
                         {reply}
                       </button>

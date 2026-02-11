@@ -323,12 +323,12 @@ export default function Estimates() {
   }, [bidsData?.bids]);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">Estimates</h1>
-          <p className="text-slate-400 mt-1">Create and manage project estimates</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-50">Estimates</h1>
+          <p className="text-sm text-slate-400 mt-1.5">Create and manage project estimates</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setShowCalculator(true)}>
@@ -344,35 +344,39 @@ export default function Estimates() {
 
       {/* Summary Statistics */}
       {bidsData && bidsData.bids.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <div className="text-center p-4">
-              <p className="text-sm text-slate-400">Total Value</p>
-              <p className="text-2xl font-bold text-slate-100 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+          <Card className="relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-slate-500/10 blur-2xl" />
+            <div className="relative text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Total Value</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-slate-50">
                 ${summaryStats.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </Card>
-          <Card>
-            <div className="text-center p-4">
-              <p className="text-sm text-slate-400">Won ({summaryStats.wonCount})</p>
-              <p className="text-2xl font-bold text-green-500 mt-2">
+          <Card className="relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-emerald-500/10 blur-2xl" />
+            <div className="relative text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Won ({summaryStats.wonCount})</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-emerald-400">
                 ${summaryStats.wonValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </Card>
-          <Card>
-            <div className="text-center p-4">
-              <p className="text-sm text-slate-400">Pending</p>
-              <p className="text-2xl font-bold text-yellow-500 mt-2">
+          <Card className="relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-amber-500/10 blur-2xl" />
+            <div className="relative text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Pending</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-amber-400">
                 ${summaryStats.pendingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </Card>
-          <Card>
-            <div className="text-center p-4">
-              <p className="text-sm text-slate-400">Win Rate</p>
-              <p className="text-2xl font-bold text-blue-500 mt-2">
+          <Card className="relative overflow-hidden">
+            <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-blue-500/10 blur-2xl" />
+            <div className="relative text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Win Rate</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-blue-400">
                 {bidsData.bids.length > 0
                   ? Math.round((summaryStats.wonCount / bidsData.bids.length) * 100)
                   : 0}%
@@ -487,26 +491,26 @@ export default function Estimates() {
             )}
 
             {/* Totals */}
-            <div className="mt-6 p-4 bg-slate-800 rounded-lg space-y-2">
+            <div className="mt-6 rounded-xl bg-slate-800/50 border border-slate-700/40 p-5 space-y-2.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Materials:</span>
-                <span className="text-slate-200">${calculatedTotal.materialTotal.toLocaleString()}</span>
+                <span className="text-slate-500">Materials</span>
+                <span className="text-slate-200 tabular-nums">${calculatedTotal.materialTotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Labor:</span>
-                <span className="text-slate-200">${calculatedTotal.laborTotal.toLocaleString()}</span>
+                <span className="text-slate-500">Labor</span>
+                <span className="text-slate-200 tabular-nums">${calculatedTotal.laborTotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Subtotal:</span>
-                <span className="text-slate-200">${calculatedTotal.subtotal.toLocaleString()}</span>
+                <span className="text-slate-500">Subtotal</span>
+                <span className="text-slate-200 tabular-nums">${calculatedTotal.subtotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Markup ({calcValues.markup}%):</span>
-                <span className="text-slate-200">${calculatedTotal.markupAmount.toLocaleString()}</span>
+                <span className="text-slate-500">Markup ({calcValues.markup}%)</span>
+                <span className="text-slate-200 tabular-nums">${calculatedTotal.markupAmount.toLocaleString()}</span>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-700">
-                <span className="text-slate-300 font-medium">Estimated Total:</span>
-                <span className="text-2xl font-bold text-blue-500">
+              <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                <span className="text-slate-300 font-semibold">Estimated Total</span>
+                <span className="text-2xl font-bold tabular-nums text-gradient-static">
                   ${calculatedTotal.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>

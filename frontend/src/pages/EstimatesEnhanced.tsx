@@ -97,12 +97,12 @@ export default function EstimatesEnhanced() {
   if (isLoading) return <EstimatesSkeleton />;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Estimates</h1>
-          <p className="mt-2 text-slate-400">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-50">Estimates</h1>
+          <p className="mt-1.5 text-sm text-slate-400">
             Manage and track your project estimates
           </p>
         </div>
