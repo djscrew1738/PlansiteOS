@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "postinstall": "npm --prefix ../../packages_temp/db install --omit=dev && npm --prefix ../../packages_temp/ai-core install --omit=dev",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -14,6 +15,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@pipelineos/ai-core": "file:../../packages_temp/ai-core",
+    "@pipelineos/db": "file:../../packages_temp/db",
     "@anthropic-ai/sdk": "^0.71.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import BASE_URL from '../../api/baseUrl';
 const MAX_FILE_SIZE_MB = 50;
+const MAX_FILES = 1;
 
 export default function BlueprintUpload({ onClose, onSuccess }) {
   const [files, setFiles] = useState([]);
@@ -25,9 +26,8 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
       'image/png': ['.png'],
       'image/jpeg': ['.jpg', '.jpeg'],
       'application/pdf': ['.pdf'],
-      'application/dxf': ['.dxf'], // Add DXF file type
     },
-    maxFiles: 5,
+    maxFiles: MAX_FILES,
     maxSize: MAX_FILE_SIZE_MB * 1024 * 1024,
   });
 
@@ -45,12 +45,12 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
     setUploadProgress(0);
 
     const formData = new FormData();
-    files.forEach(file => formData.append('blueprints', file));
+    formData.append('blueprint', files[0]);
     formData.append('projectName', projectName);
     if (projectAddress.trim()) formData.append('projectAddress', projectAddress);
 
     try {
-      const response = await axios.post(`${BASE_URL}/api/blueprints/upload-batch`, formData, {
+      const response = await axios.post(`${BASE_URL}/api/blueprints/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'x-correlation-id': crypto.randomUUID(),
@@ -77,7 +77,7 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
                   Upload Successful!
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  {files.length} blueprint(s) for "{projectName}" are now being analyzed.
+                  Blueprint for "{projectName}" is now being analyzed.
                 </p>
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Upload Blueprints</h2>
-              <p className="text-sm text-gray-500">Upload up to 5 files for a new project analysis</p>
+              <p className="text-sm text-gray-500">Upload one file for a new project analysis</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 rounded-full hover:bg-gray-100 transition" disabled={uploading}>
@@ -165,7 +165,7 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
             <p className="font-semibold text-gray-700">
               {isDragActive ? "Drop files here" : "Drag 'n' drop files here, or click to select"}
             </p>
-            <p className="text-xs text-gray-500 mt-1">PDF, PNG, JPG, DXF supported (Max {MAX_FILE_SIZE_MB}MB each)</p>
+            <p className="text-xs text-gray-500 mt-1">PDF, PNG, JPG supported (Max {MAX_FILE_SIZE_MB}MB)</p>
           </div>
 
           {fileRejectionItems.length > 0 && <div className="space-y-2">{fileRejectionItems}</div>}
@@ -232,7 +232,7 @@ export default function BlueprintUpload({ onClose, onSuccess }) {
               className="btn-primary"
               disabled={files.length === 0 || !projectName.trim() || uploading}
             >
-              {uploading ? 'Processing...' : `Upload ${files.length} File(s) & Analyze`}
+              {uploading ? 'Processing...' : 'Upload & Analyze'}
             </button>
           </div>
         </div>

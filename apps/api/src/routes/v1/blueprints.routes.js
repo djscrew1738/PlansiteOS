@@ -35,7 +35,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
     }
 
     // Validate file
-    const validation = validateFile(req.file);
+    const validation = await validateFile(req.file);
     if (!validation.valid) {
       // Delete uploaded file
       await deleteFile(req.file.path);
@@ -108,7 +108,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
           blueprintStatus, // Use determined status
           corrId,
           analysisResults ? JSON.stringify(analysisResults) : null, // Store DXF data directly
-          analysisResults ? db.fn.now() : null // Set completion time for DXF
+          analysisResults ? new Date() : null // Set completion time for DXF
         ]
       );
 
@@ -507,7 +507,7 @@ router.post('/:id/annotate', async (req, res, _next) => {
     const originalPath = blueprintRecord.rows[0].file_path;
 
     // Generate annotated blueprint
-    const BlueprintVisualizationService = require('../services/BlueprintVisualizationService');
+    const BlueprintVisualizationService = require('../../modules/blueprints/BlueprintVisualizationService');
 
     const annotatedPath = await BlueprintVisualizationService.createAnnotatedBlueprint(
       originalPath,

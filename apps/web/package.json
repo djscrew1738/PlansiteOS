@@ -8,12 +8,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "npm run lint",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --config eslint.config.js",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.14.2",
-    "axios": "^1.6.2",
+    "axios": "^1.13.5",
     "clsx": "^2.0.0",
     "date-fns": "^3.0.6",
     "lucide-react": "^0.298.0",
