@@ -1,12 +1,20 @@
+import gc
 import io
+import logging
 import math
+import os
 import tempfile
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Callable, Dict, Generator, List, Optional, Tuple
+
 import cv2
 import numpy as np
-from pdf2image import convert_from_path
+from pdf2image import convert_from_path, pdfinfo_from_path
 from PIL import Image
+
+from .config import settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -24,10 +32,17 @@ class ProcessedPage:
 class ProcessedUpload:
     upload_warnings: List[str]
     pages: List[ProcessedPage]
+    total_page_count: int = 0
+    file_size_bytes: int = 0
 
 
 BLUR_THRESHOLD = 120.0
 MIN_SHORT_SIDE = 1800
+
+
+# ---------------------------------------------------------------------------
+# Image enhancement helpers (unchanged logic, wrapped for clarity)
+# ---------------------------------------------------------------------------
 
 
 def _deskew(image: np.ndarray) -> np.ndarray:
@@ -99,25 +114,183 @@ def _save_thumbnail(image: Image.Image, path: str) -> None:
     thumb.save(path, format="JPEG", quality=85)
 
 
-def process_file(file_path: str, mime_type: str, selected_pages: Optional[List[int]] = None) -> ProcessedUpload:
+# ---------------------------------------------------------------------------
+# PDF info helper
+# ---------------------------------------------------------------------------
+
+
+def get_pdf_page_count(file_path: str) -> int:
+    """Return the number of pages in a PDF without rendering any pages."""
+    try:
+        info = pdfinfo_from_path(file_path)
+        return int(info.get("Pages", 0))
+    except Exception:
+        logger.warning("Could not determine PDF page count for %s", file_path)
+        return 0
+
+
+def _select_render_dpi(total_pages: int) -> int:
+    """Choose DPI based on page count to balance quality and memory usage.
+
+    Large documents (>threshold pages) render at a lower DPI to avoid
+    excessive memory consumption."""
+    if total_pages > settings.pdf_large_page_threshold:
+        return settings.pdf_large_render_dpi
+    return settings.pdf_render_dpi
+
+
+# ---------------------------------------------------------------------------
+# Batch page iterator – converts *batch_size* pages at a time to keep
+# peak memory bounded.
+# ---------------------------------------------------------------------------
+
+
+def _iter_pdf_pages_batched(
+    file_path: str,
+    dpi: int,
+    batch_size: int,
+    total_pages: int,
+    selected_pages: Optional[List[int]] = None,
+) -> Generator[Tuple[int, Image.Image], None, None]:
+    """Yield ``(page_number, pil_image)`` tuples by converting the PDF in
+    batches of *batch_size* pages at a time.  Each batch is converted then
+    yielded so that the caller can process and discard images before the next
+    batch is loaded.  This drastically reduces peak memory for large PDFs."""
+    for batch_start in range(1, total_pages + 1, batch_size):
+        batch_end = min(batch_start + batch_size - 1, total_pages)
+
+        # Determine which pages in this batch we actually need
+        if selected_pages:
+            needed = [p for p in range(batch_start, batch_end + 1) if p in selected_pages]
+            if not needed:
+                continue
+        else:
+            needed = list(range(batch_start, batch_end + 1))
+
+        logger.debug(
+            "Rendering PDF pages %d-%d (batch), dpi=%d",
+            batch_start, batch_end, dpi,
+        )
+        batch_images = convert_from_path(
+            file_path,
+            dpi=dpi,
+            first_page=batch_start,
+            last_page=batch_end,
+        )
+
+        for offset, pil_image in enumerate(batch_images):
+            page_num = batch_start + offset
+            if selected_pages and page_num not in selected_pages:
+                continue
+            yield page_num, pil_image
+
+        # Explicitly release batch memory
+        del batch_images
+        gc.collect()
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+def process_file(
+    file_path: str,
+    mime_type: str,
+    selected_pages: Optional[List[int]] = None,
+    progress_callback: Optional[Callable[[int, int], None]] = None,
+) -> ProcessedUpload:
+    """Process an uploaded file (image or PDF) and return page-level results.
+
+    For PDFs, pages are rendered in configurable batches to keep memory
+    usage bounded even for very large documents.
+
+    Parameters
+    ----------
+    file_path:
+        Local path to the source file.
+    mime_type:
+        MIME type of the file.
+    selected_pages:
+        Optional list of 1-based page numbers to process.  ``None`` means
+        process every page.
+    progress_callback:
+        Optional ``(current_page, total_pages) -> None`` callable invoked
+        after each page is processed.
+    """
     upload_warnings: List[str] = []
     pages: List[ProcessedPage] = []
     temp_dir = tempfile.mkdtemp(prefix="processed_")
+    total_page_count = 0
+
+    file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
 
     if mime_type == "application/pdf":
-        images = convert_from_path(file_path, dpi=350)
-        for idx, pil_image in enumerate(images, start=1):
-            if selected_pages and idx not in selected_pages:
-                continue
-            pages.append(_process_page(pil_image, idx, temp_dir))
+        total_page_count = get_pdf_page_count(file_path)
+
+        if total_page_count == 0:
+            upload_warnings.append("Could not determine PDF page count")
+            # Fall back to old single-batch behaviour
+            total_page_count = 1
+
+        if total_page_count > settings.pdf_max_pages:
+            upload_warnings.append(
+                f"PDF has {total_page_count} pages; only the first "
+                f"{settings.pdf_max_pages} will be processed"
+            )
+            effective_total = settings.pdf_max_pages
+        else:
+            effective_total = total_page_count
+
+        dpi = _select_render_dpi(effective_total)
+        batch_size = settings.pdf_page_batch_size
+
+        if dpi < settings.pdf_render_dpi:
+            upload_warnings.append(
+                f"Large PDF detected ({total_page_count} pages); "
+                f"rendering at {dpi} DPI instead of {settings.pdf_render_dpi} DPI "
+                "to optimize memory usage"
+            )
+
+        logger.info(
+            "Processing PDF: %d total pages, effective=%d, dpi=%d, batch=%d, file_size=%d",
+            total_page_count, effective_total, dpi, batch_size, file_size,
+        )
+
+        # Restrict selected_pages to the effective range
+        if selected_pages:
+            selected_pages = [p for p in selected_pages if p <= effective_total]
+
+        processed_count = 0
+        for page_num, pil_image in _iter_pdf_pages_batched(
+            file_path, dpi, batch_size, effective_total, selected_pages
+        ):
+            pages.append(_process_page(pil_image, page_num, temp_dir))
+            processed_count += 1
+
+            if progress_callback:
+                total_to_process = len(selected_pages) if selected_pages else effective_total
+                progress_callback(processed_count, total_to_process)
+
+            # Release the PIL image right away
+            del pil_image
+            gc.collect()
     else:
+        total_page_count = 1
         pil_image = Image.open(file_path).convert("RGB")
         pages.append(_process_page(pil_image, 1, temp_dir))
+        if progress_callback:
+            progress_callback(1, 1)
 
     if not pages:
         upload_warnings.append("No pages processed")
 
-    return ProcessedUpload(upload_warnings=upload_warnings, pages=pages)
+    return ProcessedUpload(
+        upload_warnings=upload_warnings,
+        pages=pages,
+        total_page_count=total_page_count,
+        file_size_bytes=file_size,
+    )
 
 
 def _process_page(pil_image: Image.Image, page_number: int, temp_dir: str) -> ProcessedPage:

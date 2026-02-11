@@ -20,6 +20,15 @@ class Settings(BaseSettings):
     upload_rate_limit: int = Field(10, alias="UPLOAD_RATE_LIMIT")
     upload_rate_window_seconds: int = Field(60, alias="UPLOAD_RATE_WINDOW_SECONDS")
 
+    # Large-PDF processing settings
+    pdf_max_pages: int = Field(200, alias="PDF_MAX_PAGES")
+    pdf_page_batch_size: int = Field(5, alias="PDF_PAGE_BATCH_SIZE")
+    pdf_render_dpi: int = Field(350, alias="PDF_RENDER_DPI")
+    pdf_large_render_dpi: int = Field(200, alias="PDF_LARGE_RENDER_DPI")
+    pdf_large_page_threshold: int = Field(20, alias="PDF_LARGE_PAGE_THRESHOLD")
+    upload_chunk_size: int = Field(10 * 1024 * 1024, alias="UPLOAD_CHUNK_SIZE")
+    processing_timeout_seconds: int = Field(600, alias="PROCESSING_TIMEOUT_SECONDS")
+
     class Config:
         env_file = ".env"
         extra = "ignore"

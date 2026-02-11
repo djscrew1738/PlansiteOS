@@ -1,8 +1,10 @@
 import json
+import logging
 import os
 import re
+import tempfile
 import uuid
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import text
@@ -26,12 +28,17 @@ from .schemas import (
 )
 from .storage import storage_client
 
+logger = logging.getLogger(__name__)
+
 ALLOWED_MIME_TYPES = {
     "application/pdf",
     "image/png",
     "image/jpeg",
     "image/jpg",
 }
+
+# Chunk size used when streaming an incoming upload to a temp file (1 MB).
+_UPLOAD_STREAM_CHUNK = 1024 * 1024
 
 app = FastAPI()
 app.add_middleware(
@@ -70,29 +77,66 @@ async def create_project(payload: ProjectCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/projects/{project_id}/uploads", response_model=UploadCreateResponse)
 async def upload_blueprint(project_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Upload a blueprint file.
+
+    For large files the upload body is streamed to a temporary file rather
+    than being buffered entirely in memory, then uploaded to S3 using the
+    managed multi-part transfer.  This keeps memory usage bounded even for
+    very large PDFs (up to the configured ``UPLOAD_MAX_BYTES`` limit).
+    """
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(status_code=400, detail="Unsupported file type")
-
-    contents = await file.read()
-    if len(contents) > settings.upload_max_bytes:
-        raise HTTPException(status_code=400, detail="File too large")
 
     filename = _sanitize_filename(file.filename or "upload")
     upload_id = uuid.uuid4()
     storage_key_original = f"projects/{project_id}/uploads/{upload_id}/original/{filename}"
 
-    storage_client.upload_bytes(storage_key_original, contents, file.content_type)
+    # Stream the incoming upload to a temp file so we never hold the whole
+    # payload in memory.
+    total_bytes = 0
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1])
+    try:
+        while True:
+            chunk = await file.read(_UPLOAD_STREAM_CHUNK)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > settings.upload_max_bytes:
+                tmp.close()
+                os.unlink(tmp.name)
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File too large. Maximum allowed size is "
+                           f"{settings.upload_max_bytes // (1024 * 1024)} MB",
+                )
+            tmp.write(chunk)
+        tmp.close()
+
+        logger.info(
+            "Received upload %s: %d bytes -> temp %s",
+            upload_id, total_bytes, tmp.name,
+        )
+
+        # Use managed transfer (multipart for large files)
+        storage_client.upload_file(storage_key_original, tmp.name, file.content_type)
+
+    finally:
+        # Clean up the temp file
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
 
     progress = {"steps": ["queued"], "current": "queued"}
     if file.content_type == "application/pdf":
-        progress["selectedPages"] = [1]
+        progress["selectedPages"] = None  # None = all pages
 
     upload = Upload(
         id=upload_id,
         project_id=project_id,
         original_filename=filename,
         mime_type=file.content_type,
-        size_bytes=len(contents),
+        size_bytes=total_bytes,
         storage_key_original=storage_key_original,
         status=UploadStatus.UPLOADED,
         progress=progress,
@@ -100,7 +144,11 @@ async def upload_blueprint(project_id: str, file: UploadFile = File(...), db: Se
     db.add(upload)
     db.commit()
 
-    queue.enqueue(process_upload, str(upload_id))
+    queue.enqueue(
+        process_upload,
+        str(upload_id),
+        job_timeout=settings.processing_timeout_seconds,
+    )
     return UploadCreateResponse(uploadId=str(upload_id), status=upload.status)
 
 
