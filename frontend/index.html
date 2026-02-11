@@ -5,17 +5,48 @@
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#020617" />
-    <meta name="description" content="PlansiteOS - AI-Powered Plumbing Estimator" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="PlansiteOS - AI-Powered blueprint analysis and plumbing estimation platform for contractors. Upload blueprints, detect fixtures, generate estimates." />
+    <meta name="author" content="CTL Plumbing LLC" />
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PlansiteOS - AI-Powered Plumbing Estimator" />
+    <meta property="og:description" content="Upload blueprints, detect fixtures automatically with AI, and generate professional plumbing estimates in minutes." />
+    <meta property="og:site_name" content="PlansiteOS" />
+
+    <!-- Security Headers (meta-level CSP for SPA) -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+
+    <!-- DNS Prefetch for potential external resources -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="preconnect" href="//fonts.googleapis.com" crossorigin />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PlansiteOS" />
+
+    <!-- Preload critical font -->
+    <link rel="preconnect" href="https://rsms.me/" crossorigin />
+    <link rel="preload" href="https://rsms.me/inter/inter.css" as="style" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
 
     <title>PlansiteOS - Plumbing Estimator</title>
   </head>
   <body>
+    <!-- No-JS fallback -->
+    <noscript>
+      <div style="padding:2rem;text-align:center;color:#e2e8f0;background:#020617;min-height:100vh;display:flex;align-items:center;justify-content:center;">
+        <div>
+          <h1 style="font-size:1.5rem;font-weight:bold;margin-bottom:1rem;">JavaScript Required</h1>
+          <p>PlansiteOS requires JavaScript to run. Please enable JavaScript in your browser settings.</p>
+        </div>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
