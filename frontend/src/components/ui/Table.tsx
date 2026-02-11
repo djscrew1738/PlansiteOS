@@ -1,10 +1,10 @@
-import { ReactNode, TableHTMLAttributes, ThHTMLAttributes } from 'react';
+import { ReactNode, TableHTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
 
 export function Table({ children, className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-auto">
-      <table className={cn('w-full border-collapse', className)} {...props}>
+    <div className="w-full overflow-auto rounded-xl border border-slate-800/60">
+      <table className={cn('w-full border-collapse text-sm', className)} {...props}>
         {children}
       </table>
     </div>
@@ -12,15 +12,19 @@ export function Table({ children, className, ...props }: TableHTMLAttributes<HTM
 }
 
 export function TableHeader({ children }: { children: ReactNode }) {
-  return <thead className="border-b border-slate-800">{children}</thead>;
+  return <thead className="bg-slate-900/40">{children}</thead>;
 }
 
 export function TableBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-slate-800">{children}</tbody>;
+  return <tbody className="divide-y divide-slate-800/50">{children}</tbody>;
 }
 
 export function TableRow({ children, className }: { children: ReactNode; className?: string }) {
-  return <tr className={cn('hover:bg-slate-900/50 transition-colors', className)}>{children}</tr>;
+  return (
+    <tr className={cn('transition-colors hover:bg-slate-800/30', className)}>
+      {children}
+    </tr>
+  );
 }
 
 interface TableHeadProps extends ThHTMLAttributes<HTMLTableCellElement> {
@@ -32,7 +36,10 @@ export function TableHead({ children, className, scope = 'col', ...props }: Tabl
   return (
     <th
       scope={scope}
-      className={cn('px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider', className)}
+      className={cn(
+        'px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500',
+        className,
+      )}
       {...props}
     >
       {children}
@@ -40,6 +47,13 @@ export function TableHead({ children, className, scope = 'col', ...props }: Tabl
   );
 }
 
-export function TableCell({ children, className }: { children: ReactNode; className?: string }) {
-  return <td className={cn('px-4 py-3 text-sm text-slate-300', className)}>{children}</td>;
+export function TableCell({
+  children,
+  className,
+}: { children: ReactNode; className?: string }) {
+  return (
+    <td className={cn('px-4 py-3 text-sm text-slate-300', className)}>
+      {children}
+    </td>
+  );
 }

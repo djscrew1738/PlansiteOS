@@ -21,7 +21,7 @@ export default function Tooltip({
   content,
   children,
   placement = 'top',
-  delay = 200,
+  delay = 300,
   disabled = false,
   className,
 }: TooltipProps) {
@@ -64,15 +64,11 @@ export default function Tooltip({
 
   const show = () => {
     if (disabled) return;
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(true);
-    }, delay);
+    timeoutRef.current = setTimeout(() => setIsVisible(true), delay);
   };
 
   const hide = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    clearTimeout(timeoutRef.current);
     setIsVisible(false);
   };
 
@@ -89,11 +85,7 @@ export default function Tooltip({
   }, [isVisible]);
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
+    return () => clearTimeout(timeoutRef.current);
   }, []);
 
   return (
@@ -118,10 +110,13 @@ export default function Tooltip({
           className="fixed z-50 animate-fadeIn pointer-events-none"
           style={{ top: `${position.top}px`, left: `${position.left}px` }}
         >
-          <div className="relative bg-slate-800 text-slate-100 text-sm px-3 py-2 rounded-lg shadow-xl border border-slate-700">
+          <div className="relative rounded-lg bg-slate-800/95 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-slate-200 shadow-xl shadow-black/30 border border-slate-700/50">
             {content}
             <div
-              className={cn('absolute w-0 h-0 border-4 border-slate-800', ARROW_STYLES[placement])}
+              className={cn(
+                'absolute w-0 h-0 border-4 border-slate-800/95',
+                ARROW_STYLES[placement],
+              )}
               aria-hidden="true"
             />
           </div>
