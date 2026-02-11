@@ -39,9 +39,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware – increase body parser limits to accommodate large blueprint metadata
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(correlationIdMiddleware());
 
 // Health check endpoint

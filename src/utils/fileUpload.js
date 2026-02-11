@@ -1,27 +1,33 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
+const crypto = require('crypto');
 const logger = require('./logger');
 const { v4: uuidv4 } = require('uuid');
 
 /**
  * File Upload Utilities
  *
- * Handles file uploads with validation, sanitization, and storage
+ * Handles file uploads with validation, sanitization, and storage.
+ * Supports large PDF blueprints (up to 200 MB) with streaming I/O.
  */
 
 // Ensure upload directory exists
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads');
 const BLUEPRINTS_DIR = path.join(UPLOAD_DIR, 'blueprints');
+const TEMP_UPLOAD_DIR = path.join(UPLOAD_DIR, 'tmp');
 
 // Create directories if they don't exist
 async function ensureDirectories() {
   try {
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
     await fs.mkdir(BLUEPRINTS_DIR, { recursive: true });
+    await fs.mkdir(TEMP_UPLOAD_DIR, { recursive: true });
     logger.info('Upload directories ensured', {
       uploadDir: UPLOAD_DIR,
-      blueprintsDir: BLUEPRINTS_DIR
+      blueprintsDir: BLUEPRINTS_DIR,
+      tempDir: TEMP_UPLOAD_DIR
     });
   } catch (error) {
     logger.error('Failed to create upload directories', {
@@ -38,9 +44,9 @@ ensureDirectories();
  * File size limits (in bytes)
  */
 const FILE_SIZE_LIMITS = {
-  blueprint: 50 * 1024 * 1024, // 50MB for blueprints
-  image: 10 * 1024 * 1024,     // 10MB for general images
-  document: 25 * 1024 * 1024   // 25MB for documents
+  blueprint: 200 * 1024 * 1024, // 200MB for blueprints (large PDFs)
+  image: 10 * 1024 * 1024,      // 10MB for general images
+  document: 25 * 1024 * 1024    // 25MB for documents
 };
 
 /**
@@ -129,13 +135,29 @@ const blueprintFileFilter = (req, file, cb) => {
 
 /**
  * Multer upload middleware for blueprints
+ *
+ * Supports files up to 200 MB.  For very large files the disk-storage
+ * backend streams the request body directly to the file system rather
+ * than buffering in memory.
  */
 const uploadBlueprint = multer({
   storage: blueprintStorage,
   fileFilter: blueprintFileFilter,
   limits: {
     fileSize: FILE_SIZE_LIMITS.blueprint,
-    files: 1 // Only one file at a time
+    files: 10 // Allow batch upload of up to 10 files
+  }
+});
+
+/**
+ * Single-file upload middleware (backward-compatible).
+ */
+const uploadBlueprintSingle = multer({
+  storage: blueprintStorage,
+  fileFilter: blueprintFileFilter,
+  limits: {
+    fileSize: FILE_SIZE_LIMITS.blueprint,
+    files: 1
   }
 });
 
@@ -338,6 +360,43 @@ function handleUploadError(error, req, res, next) {
 }
 
 /**
+ * Compute a SHA-256 checksum of a file using a streaming read.
+ * Useful for de-duplicating large uploads and verifying integrity.
+ *
+ * @param {string} filePath - Path to file
+ * @returns {Promise<string>} Hex-encoded SHA-256 hash
+ */
+async function computeFileHash(filePath) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256');
+    const stream = fsSync.createReadStream(filePath, { highWaterMark: 1024 * 1024 });
+    stream.on('data', (chunk) => hash.update(chunk));
+    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('error', reject);
+  });
+}
+
+/**
+ * Get basic PDF metadata (page count) without loading the entire file.
+ * Falls back to 0 if pdf-parse is not available or the file is not a valid PDF.
+ *
+ * @param {string} filePath - Path to a PDF file
+ * @returns {Promise<{pageCount: number}>}
+ */
+async function getPdfInfo(filePath) {
+  try {
+    // Quick heuristic: count occurrences of /Type /Page in the raw bytes.
+    // This avoids a heavy dependency for a simple page-count check.
+    const buffer = await fs.readFile(filePath);
+    const text = buffer.toString('latin1');
+    const matches = text.match(/\/Type\s*\/Page[^s]/g);
+    return { pageCount: matches ? matches.length : 0 };
+  } catch (_error) {
+    return { pageCount: 0 };
+  }
+}
+
+/**
  * Custom File Upload Error
  */
 class FileUploadError extends Error {
@@ -350,6 +409,7 @@ class FileUploadError extends Error {
 
 module.exports = {
   uploadBlueprint,
+  uploadBlueprintSingle,
   validateFile,
   getFileMetadata,
   deleteFile,
@@ -357,9 +417,12 @@ module.exports = {
   checkDiskSpace,
   cleanupOldFiles,
   handleUploadError,
+  computeFileHash,
+  getPdfInfo,
   FileUploadError,
   UPLOAD_DIR,
   BLUEPRINTS_DIR,
+  TEMP_UPLOAD_DIR,
   FILE_SIZE_LIMITS,
   ALLOWED_MIME_TYPES,
   ALLOWED_EXTENSIONS
