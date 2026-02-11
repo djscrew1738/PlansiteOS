@@ -86,7 +86,6 @@ CREATE TABLE IF NOT EXISTS blueprints (
       'processing',
       'completed',
       'failed',
-      'processed',
       'processed-dxf'
     )
   )
