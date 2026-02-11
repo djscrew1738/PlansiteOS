@@ -5,8 +5,10 @@
   "description": "Database migrations and schema",
   "main": "src/index.js",
   "scripts": {
-    "migrate": "node migrate.js up",
-    "migrate:down": "node migrate.js down",
+    "migrate": "node migrate.js latest",
+    "migrate:latest": "node migrate.js latest",
+    "migrate:rollback": "node migrate.js rollback",
+    "migrate:status": "node migrate.js status",
     "migrate:create": "node migrate.js create",
     "seed": "node seeds/index.js",
     "lint": "eslint .",
