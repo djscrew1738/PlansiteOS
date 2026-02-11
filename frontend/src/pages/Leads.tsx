@@ -228,12 +228,12 @@ export default function Leads() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">Leads</h1>
-          <p className="text-slate-400 mt-1">Track and convert leads to jobs</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-50">Leads</h1>
+          <p className="text-sm text-slate-400 mt-1.5">Track and convert leads to jobs</p>
         </div>
         <Button variant="primary" onClick={() => setShowAddLead(true)}>
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -241,42 +241,47 @@ export default function Leads() {
         </Button>
       </div>
 
-      {/* Source Tabs */}
+      {/* Source Tabs + View Toggle */}
       <Card>
-        <div className="flex flex-wrap gap-2">
-          {leadSources.map((source) => (
-            <button
-              key={source.id}
-              onClick={() => setActiveSource(source.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeSource === source.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-wrap gap-1.5">
+            {leadSources.map((source) => (
+              <button
+                key={source.id}
+                onClick={() => setActiveSource(source.id)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  activeSource === source.id
+                    ? 'bg-blue-500/15 text-blue-400 shadow-sm shadow-blue-500/10'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                }`}
+              >
+                {source.label}
+                <span className={`ml-1.5 tabular-nums ${activeSource === source.id ? 'text-blue-400/70' : 'text-slate-600'}`}>
+                  {source.count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 rounded-lg bg-slate-900/60 border border-slate-800/60 p-0.5">
+            <Button
+              variant={viewMode === 'kanban' ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+              className="!rounded-md !text-xs"
             >
-              {source.label} ({source.count})
-            </button>
-          ))}
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="!rounded-md !text-xs"
+            >
+              List
+            </Button>
+          </div>
         </div>
       </Card>
-
-      {/* View Toggle */}
-      <div className="flex gap-2">
-        <Button
-          variant={viewMode === 'kanban' ? 'primary' : 'ghost'}
-          size="sm"
-          onClick={() => setViewMode('kanban')}
-        >
-          Kanban
-        </Button>
-        <Button
-          variant={viewMode === 'list' ? 'primary' : 'ghost'}
-          size="sm"
-          onClick={() => setViewMode('list')}
-        >
-          List
-        </Button>
-      </div>
 
       {/* Kanban Board */}
       {viewMode === 'kanban' && (
@@ -285,41 +290,39 @@ export default function Leads() {
             const columnLeads = getLeadsByStage(column.id);
             return (
               <div key={column.id} className="flex flex-col">
-                <div className="mb-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-slate-300">{column.title}</h3>
-                    <Badge variant={column.color as any}>{columnLeads.length}</Badge>
-                  </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{column.title}</h3>
+                  <Badge variant={column.color as any} size="sm">{columnLeads.length}</Badge>
                 </div>
-                <div className="space-y-3 flex-1">
+                <div className="space-y-2.5 flex-1">
                   {columnLeads.map((lead) => (
                     <Card
                       key={lead.id}
                       hover
-                      className="cursor-pointer"
+                      className="cursor-pointer !p-3.5"
                       onClick={() => openLeadDetail(lead)}
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between">
-                          <h4 className="font-medium text-slate-100">{lead.name}</h4>
-                          <span className="text-lg">{getSourceIcon(lead.source)}</span>
+                          <h4 className="text-sm font-semibold text-slate-100">{lead.name}</h4>
+                          <span className="text-sm opacity-70">{getSourceIcon(lead.source)}</span>
                         </div>
                         {lead.phone && (
-                          <div className="flex items-center text-xs text-slate-400">
-                            <PhoneIcon className="w-3 h-3 mr-1" />
+                          <div className="flex items-center text-[11px] text-slate-500">
+                            <PhoneIcon className="w-3 h-3 mr-1.5 text-slate-600" />
                             {lead.phone}
                           </div>
                         )}
                         {lead.address && (
-                          <div className="flex items-start text-xs text-slate-400">
-                            <MapPinIcon className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
+                          <div className="flex items-start text-[11px] text-slate-500">
+                            <MapPinIcon className="w-3 h-3 mr-1.5 mt-0.5 flex-shrink-0 text-slate-600" />
                             <span className="line-clamp-2">{lead.address}</span>
                           </div>
                         )}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                          <span className="text-xs text-slate-500">{getDaysOld(lead.createdAt)}d ago</span>
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
+                          <span className="text-[11px] text-slate-600">{getDaysOld(lead.createdAt)}d ago</span>
                           {lead.estimatedValue && (
-                            <span className="text-xs font-semibold text-blue-500">
+                            <span className="text-[11px] font-bold tabular-nums text-blue-400">
                               ${lead.estimatedValue.toLocaleString()}
                             </span>
                           )}
@@ -336,34 +339,34 @@ export default function Leads() {
 
       {/* List View */}
       {viewMode === 'list' && (
-        <Card>
+        <Card className="!p-0 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-slate-800">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-900/40">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Phone</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Address</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Source</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Stage</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Age</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase">Value</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Phone</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Address</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Source</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stage</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Age</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Value</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-slate-800/50">
                 {filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-slate-900/50 cursor-pointer" onClick={() => openLeadDetail(lead)}>
-                    <td className="px-4 py-3 text-sm text-slate-200">{lead.name}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{lead.phone || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{lead.address || '-'}</td>
+                  <tr key={lead.id} className="transition-colors hover:bg-slate-800/30 cursor-pointer" onClick={() => openLeadDetail(lead)}>
+                    <td className="px-4 py-3 font-medium text-slate-200">{lead.name}</td>
+                    <td className="px-4 py-3 text-slate-400 tabular-nums">{lead.phone || '-'}</td>
+                    <td className="px-4 py-3 text-slate-400 max-w-[200px] truncate">{lead.address || '-'}</td>
                     <td className="px-4 py-3 text-sm">{getSourceIcon(lead.source)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={kanbanColumns.find(c => c.id === lead.stage)?.color as any || 'blue'}>
+                      <Badge variant={kanbanColumns.find(c => c.id === lead.stage)?.color as any || 'blue'} size="sm">
                         {lead.stage}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{getDaysOld(lead.createdAt)}d</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-blue-500">
+                    <td className="px-4 py-3 text-slate-500 tabular-nums">{getDaysOld(lead.createdAt)}d</td>
+                    <td className="px-4 py-3 text-right font-bold tabular-nums text-blue-400">
                       {lead.estimatedValue ? `$${lead.estimatedValue.toLocaleString()}` : '-'}
                     </td>
                   </tr>

@@ -54,10 +54,15 @@ export function useUploadBlueprint() {
   return useMutation<
     BlueprintUploadResponse,
     ApiError,
-    { file: File; projectName?: string; projectAddress?: string }
+    {
+      file: File;
+      projectName?: string;
+      projectAddress?: string;
+      onProgress?: (e: { loaded: number; total: number; percent: number }) => void;
+    }
   >({
-    mutationFn: ({ file, projectName, projectAddress }) =>
-      api.blueprints.upload(file, projectName, projectAddress),
+    mutationFn: ({ file, projectName, projectAddress, onProgress }) =>
+      api.blueprints.upload(file, projectName, projectAddress, onProgress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blueprints });
     },

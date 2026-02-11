@@ -1,4 +1,5 @@
-import { TextareaHTMLAttributes, forwardRef } from 'react';
+import { TextareaHTMLAttributes, forwardRef, useId } from 'react';
+import { cn } from '../../lib/utils';
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -7,24 +8,36 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, className = '', ...props }, ref) => {
+    const generatedId = useId();
+    const id = props.id || generatedId;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">
+          <label htmlFor={id} className="mb-2 block text-sm font-medium text-slate-300">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
-          className={`w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-vertical ${
-            error ? 'border-red-500 focus:ring-red-500' : ''
-          } ${className}`}
+          id={id}
+          className={cn(
+            'w-full rounded-xl border bg-slate-900/70 px-3.5 py-2.5 text-sm text-slate-100',
+            'placeholder-slate-500 resize-y min-h-[80px]',
+            'shadow-inner shadow-black/10',
+            'transition-[border-color,box-shadow] duration-200',
+            'focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60',
+            error
+              ? 'border-red-500/60 focus:ring-red-500/40'
+              : 'border-slate-800/80 hover:border-slate-700/80',
+            className,
+          )}
           {...props}
         />
-        {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
+        {error && <p className="mt-1.5 text-xs font-medium text-red-400">{error}</p>}
       </div>
     );
-  }
+  },
 );
 
 Textarea.displayName = 'Textarea';

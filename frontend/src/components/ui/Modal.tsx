@@ -15,7 +15,7 @@ const MODAL_SIZES = {
   sm: 'max-w-md',
   md: 'max-w-lg',
   lg: 'max-w-2xl',
-  xl: 'max-w-4xl'
+  xl: 'max-w-4xl',
 } as const;
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md', ariaLabel }: ModalProps) {
@@ -26,7 +26,6 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', a
   useEffect(() => {
     if (!isOpen) return;
 
-    // Store the currently focused element to restore later
     previousActiveElement.current = document.activeElement as HTMLElement;
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,26 +34,23 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', a
         return;
       }
 
-      // Focus trap: Tab navigation stays within modal
+      // Focus trap
       if (e.key === 'Tab' && dialogRef.current) {
-        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         );
-
-        if (focusableElements.length === 0) {
+        if (focusable.length === 0) {
           e.preventDefault();
           return;
         }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (e.shiftKey && document.activeElement === firstElement) {
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
-          lastElement.focus();
-        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
           e.preventDefault();
-          firstElement.focus();
+          first.focus();
         }
       }
     };
@@ -62,18 +58,17 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', a
     document.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';
 
-    // Focus the dialog or first focusable element
     requestAnimationFrame(() => {
-      const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      firstFocusable?.focus();
+      dialogRef.current
+        ?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        ?.focus();
     });
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
-      // Restore focus to previous element
       previousActiveElement.current?.focus();
     };
   }, [isOpen, onClose]);
@@ -82,11 +77,14 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', a
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
+
+      {/* Dialog */}
       <div
         ref={dialogRef}
         role="dialog"
@@ -94,23 +92,28 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', a
         aria-labelledby={title ? titleId : undefined}
         aria-label={!title ? ariaLabel : undefined}
         className={cn(
-          'relative bg-slate-900 rounded-lg border border-slate-800 shadow-xl w-full animate-slideUp',
-          MODAL_SIZES[size]
+          'relative w-full animate-scaleIn',
+          'rounded-2xl border border-slate-800/60',
+          'bg-slate-900/95 backdrop-blur-xl',
+          'shadow-2xl shadow-black/40',
+          MODAL_SIZES[size],
         )}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-            <h2 id={titleId} className="text-xl font-semibold text-slate-100">{title}</h2>
+          <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800/60">
+            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-slate-100">
+              {title}
+            </h2>
             <button
               onClick={onClose}
               aria-label="Close dialog"
-              className="text-slate-400 hover:text-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
             >
-              <XMarkIcon className="w-6 h-6" />
+              <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
         )}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-5">{children}</div>
       </div>
     </div>
   );

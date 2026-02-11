@@ -8,6 +8,8 @@ import type {
   BidGenerateRequest,
   BidsListResponse,
   HealthStatus,
+  UploadLimits,
+  BatchUploadResponse,
 } from '../types/api';
 
 // Use relative path in dev (proxied by Vite), absolute URL in production
@@ -31,20 +33,117 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return json as T;
 }
 
+// ---------------------------------------------------------------------------
+// Progress-aware upload using XMLHttpRequest (fetch doesn't expose upload
+// progress).  Used for large blueprint files to keep the user informed.
+// ---------------------------------------------------------------------------
+
+export interface UploadProgressEvent {
+  /** Bytes uploaded so far */
+  loaded: number;
+  /** Total file size in bytes (0 if unknown) */
+  total: number;
+  /** 0 – 100 */
+  percent: number;
+}
+
+function uploadWithProgress<T>(
+  url: string,
+  formData: FormData,
+  onProgress?: (e: UploadProgressEvent) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (e) => {
+        onProgress({
+          loaded: e.loaded,
+          total: e.total,
+          percent: e.total ? Math.round((e.loaded / e.total) * 100) : 0,
+        });
+      });
+    }
+
+    xhr.addEventListener('load', () => {
+      try {
+        const json = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && json.success !== false) {
+          resolve(json as T);
+        } else {
+          const message = json.error?.message || json.error || json.message || `Upload failed (${xhr.status})`;
+          reject(new ApiError(xhr.status, message));
+        }
+      } catch {
+        reject(new ApiError(xhr.status, 'Invalid response from server'));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new ApiError(0, 'Network error during upload')));
+    xhr.addEventListener('abort', () => reject(new ApiError(0, 'Upload aborted')));
+    xhr.addEventListener('timeout', () => reject(new ApiError(0, 'Upload timed out')));
+
+    // 10 minute timeout for very large files
+    xhr.timeout = 10 * 60 * 1000;
+
+    xhr.send(formData);
+  });
+}
+
 // Blueprints API
 export const blueprintsApi = {
-  // Upload a blueprint file
-  upload: async (file: File, projectName?: string, projectAddress?: string): Promise<BlueprintUploadResponse> => {
+  // Get upload constraints from server
+  getUploadLimits: async (): Promise<UploadLimits> => {
+    const res = await fetch(`${API_BASE}/api/blueprints/upload-limits`);
+    return handleResponse<UploadLimits>(res);
+  },
+
+  // Upload a single blueprint file with upload-progress reporting
+  upload: async (
+    file: File,
+    projectName?: string,
+    projectAddress?: string,
+    onProgress?: (e: UploadProgressEvent) => void,
+  ): Promise<BlueprintUploadResponse> => {
     const form = new FormData();
     form.append('blueprint', file);
     if (projectName) form.append('projectName', projectName);
     if (projectAddress) form.append('projectAddress', projectAddress);
+
+    // For files > 5 MB use the progress-aware XHR uploader
+    if (file.size > 5 * 1024 * 1024 && onProgress) {
+      return uploadWithProgress<BlueprintUploadResponse>(
+        `${API_BASE}/api/blueprints/upload`,
+        form,
+        onProgress,
+      );
+    }
 
     const res = await fetch(`${API_BASE}/api/blueprints/upload`, {
       method: 'POST',
       body: form,
     });
     return handleResponse<BlueprintUploadResponse>(res);
+  },
+
+  // Upload multiple blueprint files at once with progress
+  uploadBatch: async (
+    files: File[],
+    projectName?: string,
+    projectAddress?: string,
+    onProgress?: (e: UploadProgressEvent) => void,
+  ): Promise<BatchUploadResponse> => {
+    const form = new FormData();
+    files.forEach((f) => form.append('blueprints', f));
+    if (projectName) form.append('projectName', projectName);
+    if (projectAddress) form.append('projectAddress', projectAddress);
+
+    return uploadWithProgress<BatchUploadResponse>(
+      `${API_BASE}/api/blueprints/upload-batch`,
+      form,
+      onProgress,
+    );
   },
 
   // List all blueprints with pagination
@@ -181,7 +280,12 @@ export const healthApi = {
 export const pagesApi = {
   // Get image URL for a page (uses blueprint ID as page ID)
   imageUrl: (pageId: string): string => {
-    return `${API_BASE}/api/blueprints/${pageId}/image`;
+    return `${API_BASE}/api/pages/${pageId}/image`;
+  },
+
+  // Get thumbnail URL for a page
+  thumbUrl: (pageId: string): string => {
+    return `${API_BASE}/api/pages/${pageId}/thumb`;
   },
 
   // Get calibration data (stored in localStorage for now)

@@ -3,10 +3,15 @@ const router = express.Router();
 const BlueprintService = require('../services/BlueprintService');
 const {
   uploadBlueprint,
+  uploadBlueprintSingle,
   validateFile,
   getFileMetadata,
   deleteFile,
-  handleUploadError
+  computeFileHash,
+  getPdfInfo,
+  handleUploadError,
+  formatFileSize,
+  FILE_SIZE_LIMITS
 } = require('../utils/fileUpload');
 const correlationId = require('../utils/CorrelationId');
 const { getTransactionManager } = require('../utils/TransactionManager');
@@ -14,10 +19,28 @@ const db = require('../config/database');
 const logger = require('../utils/logger');
 
 /**
- * POST /api/blueprints/upload
- * Upload and analyze a blueprint
+ * GET /api/blueprints/upload-limits
+ * Return the current upload constraints so the frontend can enforce them
+ * client-side before starting a transfer.
  */
-router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _next) => {
+router.get('/upload-limits', (_req, res) => {
+  res.json({
+    maxFileSize: FILE_SIZE_LIMITS.blueprint,
+    maxFileSizeHuman: formatFileSize(FILE_SIZE_LIMITS.blueprint),
+    allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.tif', '.pdf'],
+    allowedMimeTypes: [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/tiff', 'application/pdf'
+    ],
+    maxFiles: 10
+  });
+});
+
+/**
+ * POST /api/blueprints/upload
+ * Upload and analyze a single blueprint (backward-compatible).
+ */
+router.post('/upload', uploadBlueprintSingle.single('blueprint'), async (req, res, _next) => {
   const corrId = correlationId.get();
   let blueprintId = null;
 
@@ -181,6 +204,161 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
         details: error.message
       }
     });
+  }
+});
+
+/**
+ * POST /api/blueprints/upload-batch
+ * Upload multiple blueprints at once (up to 10 files).
+ * Returns an array of results – one per file.
+ */
+router.post('/upload-batch', uploadBlueprint.array('blueprints', 10), async (req, res, _next) => {
+  const corrId = correlationId.get();
+
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({
+      error: {
+        message: 'No files uploaded',
+        code: 'NO_FILES',
+        correlationId: corrId
+      }
+    });
+  }
+
+  const results = [];
+
+  for (const file of req.files) {
+    let blueprintId = null;
+    try {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        await deleteFile(file.path);
+        results.push({
+          fileName: file.originalname,
+          success: false,
+          errors: validation.errors
+        });
+        continue;
+      }
+
+      const fileMetadata = getFileMetadata(file);
+      const projectName = req.body.projectName || 'Untitled Project';
+      const projectAddress = req.body.projectAddress || null;
+
+      // Compute file hash for de-duplication
+      let fileHash = null;
+      try {
+        fileHash = await computeFileHash(file.path);
+      } catch (_e) { /* non-critical */ }
+
+      // Get PDF info if applicable
+      let pdfInfo = null;
+      if (file.mimetype === 'application/pdf') {
+        pdfInfo = await getPdfInfo(file.path);
+      }
+
+      const txManager = getTransactionManager(db);
+      const blueprintRecord = await txManager.execute(async (client) => {
+        const result = await client.query(
+          `INSERT INTO blueprints (
+            project_name, project_address, file_name, file_path,
+            file_size, file_type, status, correlation_id, created_at, updated_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+          RETURNING *`,
+          [
+            projectName, projectAddress, fileMetadata.originalName,
+            fileMetadata.path, fileMetadata.size, fileMetadata.mimeType,
+            'pending', corrId
+          ]
+        );
+        return result.rows[0];
+      }, { correlationId: corrId });
+
+      blueprintId = blueprintRecord.id;
+
+      logger.info('Blueprint batch item created', {
+        correlationId: corrId,
+        blueprintId,
+        fileName: file.originalname,
+        fileSize: formatFileSize(file.size),
+        pageCount: pdfInfo?.pageCount || 'N/A'
+      });
+
+      results.push({
+        fileName: file.originalname,
+        success: true,
+        blueprintId,
+        fileSize: fileMetadata.size,
+        fileSizeHuman: formatFileSize(fileMetadata.size),
+        fileHash,
+        pageCount: pdfInfo?.pageCount || null,
+        status: 'pending'
+      });
+
+    } catch (error) {
+      logger.error('Batch upload item failed', {
+        correlationId: corrId,
+        fileName: file.originalname,
+        error: error.message
+      });
+
+      if (file.path) await deleteFile(file.path);
+
+      results.push({
+        fileName: file.originalname,
+        success: false,
+        errors: [error.message]
+      });
+    }
+  }
+
+  res.status(201).json({
+    success: true,
+    correlationId: corrId,
+    totalFiles: req.files.length,
+    successCount: results.filter(r => r.success).length,
+    failedCount: results.filter(r => !r.success).length,
+    results
+  });
+});
+
+/**
+ * GET /api/blueprints/:id/pdf-info
+ * Return lightweight PDF metadata (page count, file hash) for an
+ * already-uploaded blueprint.
+ */
+router.get('/:id/pdf-info', async (req, res, _next) => {
+  const corrId = correlationId.get();
+  try {
+    const blueprintId = parseInt(req.params.id);
+    if (isNaN(blueprintId)) {
+      return res.status(400).json({ error: { message: 'Invalid ID', code: 'INVALID_ID' } });
+    }
+
+    const bp = await db.query('SELECT file_path, file_type FROM blueprints WHERE id = $1', [blueprintId]);
+    if (bp.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Not found', code: 'NOT_FOUND' } });
+    }
+
+    const { file_path, file_type } = bp.rows[0];
+    let pdfInfo = { pageCount: 0 };
+    if (file_type === 'application/pdf') {
+      pdfInfo = await getPdfInfo(file_path);
+    }
+
+    const fileHash = await computeFileHash(file_path);
+
+    res.json({
+      success: true,
+      correlationId: corrId,
+      blueprintId,
+      fileHash,
+      ...pdfInfo
+    });
+  } catch (error) {
+    logger.error('Failed to get PDF info', { correlationId: corrId, error: error.message });
+    res.status(500).json({ error: { message: 'Failed to get PDF info', code: 'PDF_INFO_FAILED' } });
   }
 });
 

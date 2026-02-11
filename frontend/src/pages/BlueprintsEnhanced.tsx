@@ -49,7 +49,16 @@ const statusOptions: ComboboxOption[] = [
   { value: 'failed', label: 'Failed', description: 'Processing failed' },
 ];
 
-// Upload Modal Component with new FileUpload
+// Format bytes to human-readable
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
+// Upload Modal Component with progress-aware large file upload
 function UploadModal({
   isOpen,
   onClose,
@@ -63,6 +72,15 @@ function UploadModal({
   const [projectAddress, setProjectAddress] = useState('');
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [errors, setErrors] = useState<{ projectName?: string; projectAddress?: string }>({});
+  const [uploadProgress, setUploadProgress] = useState<{
+    active: boolean;
+    fileName: string;
+    percent: number;
+    loaded: number;
+    total: number;
+    fileIndex: number;
+    fileCount: number;
+  } | null>(null);
   const uploadMutation = useUploadBlueprint();
   const toast = useToast();
 
@@ -86,22 +104,55 @@ function UploadModal({
       return;
     }
 
-    // Upload each file
-    for (const file of filesToUpload) {
+    let successCount = 0;
+    let failCount = 0;
+
+    // Upload each file sequentially with progress tracking
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+
+      setUploadProgress({
+        active: true,
+        fileName: file.name,
+        percent: 0,
+        loaded: 0,
+        total: file.size,
+        fileIndex: i + 1,
+        fileCount: filesToUpload.length,
+      });
+
       try {
         await uploadMutation.mutateAsync({
           file,
           projectName: projectName || undefined,
           projectAddress: projectAddress || undefined,
+          onProgress: (e) => {
+            setUploadProgress((prev) =>
+              prev
+                ? { ...prev, percent: e.percent, loaded: e.loaded, total: e.total }
+                : null
+            );
+          },
         });
+        successCount++;
         toast.success('Upload complete', `${file.name} uploaded successfully`);
       } catch (err) {
-        toast.error('Upload failed', `${file.name}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        failCount++;
+        toast.error(
+          'Upload failed',
+          `${file.name}: ${err instanceof Error ? err.message : 'Unknown error'}`
+        );
       }
     }
 
+    setUploadProgress(null);
+
     // Success - reset and close
-    if (filesToUpload.length > 0) {
+    if (successCount > 0) {
+      toast.success(
+        'Uploads finished',
+        `${successCount} of ${filesToUpload.length} file(s) uploaded${failCount ? `, ${failCount} failed` : ''}`
+      );
       setTimeout(() => {
         onSuccess();
         onClose();
@@ -143,16 +194,49 @@ function UploadModal({
           error={errors.projectAddress}
         />
 
-        {/* File Upload Component */}
+        {/* Upload Progress Indicator */}
+        {uploadProgress?.active && (
+          <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-blue-300 font-medium truncate max-w-[70%]">
+                Uploading: {uploadProgress.fileName}
+              </span>
+              <span className="text-blue-400 text-xs">
+                {uploadProgress.fileIndex}/{uploadProgress.fileCount}
+              </span>
+            </div>
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>
+                {formatBytes(uploadProgress.loaded)} / {formatBytes(uploadProgress.total)}
+              </span>
+              <span>{uploadProgress.percent}%</span>
+            </div>
+          </div>
+        )}
+
+        {/* File Upload Component – 200MB max per file */}
         <FileUpload
-          accept=".pdf,.png,.jpg,.jpeg,.dxf"
+          accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif,.dxf"
           multiple={true}
-          maxSize={50 * 1024 * 1024} // 50MB
+          maxSize={200 * 1024 * 1024}
           maxFiles={10}
           onFilesChange={setFiles}
           onUpload={handleUpload}
+          disabled={!!uploadProgress?.active}
           showPreview={true}
         />
+
+        {/* Large file guidance */}
+        <p className="text-xs text-slate-500">
+          Supports PDF blueprints up to 200 MB and 200 pages. Large files are uploaded
+          in the background with progress tracking.
+        </p>
       </div>
     </Modal>
   );
@@ -224,12 +308,12 @@ export default function BlueprintsEnhanced() {
   }
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-100">Blueprints</h1>
-          <p className="mt-2 text-slate-400">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-50">Blueprints</h1>
+          <p className="mt-1.5 text-sm text-slate-400">
             Upload and manage blueprint files for AI-powered analysis
           </p>
         </div>

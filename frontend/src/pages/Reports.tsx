@@ -195,83 +195,46 @@ export default function Reports() {
     return <ReportsSkeleton />;
   }
 
+  const KPI_CARDS = [
+    {
+      label: 'Total Revenue', color: 'emerald', Icon: CurrencyDollarIcon,
+      value: `$${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      sub: <div className="flex items-center gap-1 mt-2">
+        {kpis.revenueTrend >= 0 ? <ArrowTrendingUpIcon className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowTrendingDownIcon className="w-3.5 h-3.5 text-red-400" />}
+        <span className={`text-xs font-semibold ${kpis.revenueTrend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{Math.abs(kpis.revenueTrend).toFixed(1)}%</span>
+        <span className="text-[11px] text-slate-600">vs last month</span>
+      </div>,
+    },
+    { label: 'Win Rate', color: 'blue', Icon: CheckCircleIcon, value: `${kpis.conversionRate.toFixed(1)}%`, sub: <p className="text-[11px] text-slate-600 mt-2">{kpis.wonBids} of {kpis.totalBids} bids won</p> },
+    { label: 'Avg Bid Value', color: 'amber', Icon: ChartBarIcon, value: `$${kpis.avgBidValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, sub: <p className="text-[11px] text-slate-600 mt-2">Across all estimates</p> },
+    { label: 'Avg Time to Close', color: 'purple', Icon: ClockIcon, value: `${avgTimeToClose} days`, sub: <p className="text-[11px] text-slate-600 mt-2">Draft to accepted</p> },
+  ];
+
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-100">Reports & Analytics</h1>
-        <p className="text-slate-400 mt-1">Business insights and performance metrics</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-50">Reports & Analytics</h1>
+        <p className="text-sm text-slate-400 mt-1.5">Business insights and performance metrics</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Total Revenue</p>
-              <p className="text-2xl font-bold text-slate-100 mt-2">
-                ${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-              <div className="flex items-center gap-1 mt-2">
-                {kpis.revenueTrend >= 0 ? (
-                  <ArrowTrendingUpIcon className="w-4 h-4 text-green-500" />
-                ) : (
-                  <ArrowTrendingDownIcon className="w-4 h-4 text-red-500" />
-                )}
-                <span className={`text-sm ${kpis.revenueTrend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {Math.abs(kpis.revenueTrend).toFixed(1)}%
-                </span>
-                <span className="text-xs text-slate-500">vs last month</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+        {KPI_CARDS.map(({ label, color, Icon, value, sub }) => (
+          <Card key={label} className="relative overflow-hidden">
+            <div className={`absolute -top-6 -right-6 h-20 w-20 rounded-full bg-${color}-500/10 blur-2xl opacity-60`} />
+            <div className="relative flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-slate-50">{value}</p>
+                {sub}
+              </div>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-${color}-500/10 shadow-lg shadow-${color}-500/20`}>
+                <Icon className={`h-5 w-5 text-${color}-400`} />
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-green-500/10">
-              <CurrencyDollarIcon className="w-6 h-6 text-green-500" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Win Rate</p>
-              <p className="text-2xl font-bold text-slate-100 mt-2">{kpis.conversionRate.toFixed(1)}%</p>
-              <p className="text-xs text-slate-500 mt-2">
-                {kpis.wonBids} of {kpis.totalBids} bids won
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-blue-500/10">
-              <CheckCircleIcon className="w-6 h-6 text-blue-500" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Avg Bid Value</p>
-              <p className="text-2xl font-bold text-slate-100 mt-2">
-                ${kpis.avgBidValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </p>
-              <p className="text-xs text-slate-500 mt-2">Across all estimates</p>
-            </div>
-            <div className="p-3 rounded-lg bg-yellow-500/10">
-              <ChartBarIcon className="w-6 h-6 text-yellow-500" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Avg Time to Close</p>
-              <p className="text-2xl font-bold text-slate-100 mt-2">{avgTimeToClose} days</p>
-              <p className="text-xs text-slate-500 mt-2">Draft to accepted</p>
-            </div>
-            <div className="p-3 rounded-lg bg-purple-500/10">
-              <ClockIcon className="w-6 h-6 text-purple-500" />
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -284,15 +247,15 @@ export default function Reports() {
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={revenueByMonth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="month" stroke="#94a3b8" />
-                  <YAxis stroke="#94a3b8" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(51,65,85,0.4)" vertical={false} />
+                  <XAxis dataKey="month" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                    labelStyle={{ color: '#e2e8f0' }}
+                    contentStyle={{ backgroundColor: 'rgba(15,23,42,0.95)', border: '1px solid rgba(51,65,85,0.6)', borderRadius: '12px', backdropFilter: 'blur(8px)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}
+                    labelStyle={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 4 }}
                     formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
                   />
-                  <Line type="monotone" dataKey="revenue" stroke={COLORS.primary} strokeWidth={2} dot={{ fill: COLORS.primary }} />
+                  <Line type="monotone" dataKey="revenue" stroke={COLORS.primary} strokeWidth={2.5} dot={{ fill: COLORS.primary, strokeWidth: 0, r: 4 }} activeDot={{ fill: '#60a5fa', strokeWidth: 0, r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

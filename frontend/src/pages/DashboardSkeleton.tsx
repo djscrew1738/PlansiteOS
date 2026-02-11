@@ -3,7 +3,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
+    <div className="space-y-8">
       {/* Header */}
       <div>
         <Skeleton className="h-8 w-1/4" />

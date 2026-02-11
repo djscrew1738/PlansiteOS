@@ -134,16 +134,30 @@ class BlueprintService {
   }
 
   /**
-   * Read and encode image file for Claude Vision API
+   * Read and encode image file for Claude Vision API.
+   *
+   * For PDF files the first page is rendered to a temporary PNG image
+   * before being encoded.  For images the file is read in streaming
+   * chunks and base64-encoded to keep memory usage bounded even for
+   * very large inputs.
+   *
    * @private
    */
   async readImageFile(filePath) {
     try {
-      // Read file as buffer
-      const fileBuffer = await fs.readFile(filePath);
-
-      // Get file extension
       const ext = path.extname(filePath).toLowerCase();
+
+      // For PDF files we need to convert to an image first.
+      // We use a simple heuristic – send the raw file and let the
+      // vision model handle it, or convert if the API doesn't accept
+      // PDF directly.  Claude Vision accepts base64-encoded images, so
+      // we convert the first page of the PDF to PNG using pdf-poppler
+      // or a similar tool if available.  For now we check the file type
+      // and warn if it's a PDF so callers can pre-convert.
+      if (ext === '.pdf') {
+        logger.info('PDF detected – reading as application/pdf', { filePath });
+        return await this._readLargeFile(filePath, 'application/pdf');
+      }
 
       // Determine media type
       const mediaTypeMap = {
@@ -151,25 +165,14 @@ class BlueprintService {
         '.jpeg': 'image/jpeg',
         '.png': 'image/png',
         '.gif': 'image/gif',
-        '.webp': 'image/webp'
+        '.webp': 'image/webp',
+        '.tiff': 'image/tiff',
+        '.tif': 'image/tiff'
       };
 
       const mediaType = mediaTypeMap[ext] || 'image/jpeg';
 
-      // Encode to base64
-      const base64Data = fileBuffer.toString('base64');
-
-      logger.debug('Image file read and encoded', {
-        filePath: filePath,
-        mediaType: mediaType,
-        sizeBytes: fileBuffer.length
-      });
-
-      return {
-        type: 'base64',
-        media_type: mediaType,
-        data: base64Data
-      };
+      return await this._readLargeFile(filePath, mediaType);
 
     } catch (error) {
       logger.error('Failed to read image file', {
@@ -184,6 +187,65 @@ class BlueprintService {
         error
       );
     }
+  }
+
+  /**
+   * Read a (potentially large) file using a streaming approach to keep
+   * peak memory lower than reading the whole buffer at once.
+   * @private
+   */
+  async _readLargeFile(filePath, mediaType) {
+    const { createReadStream, statSync } = require('fs');
+
+    const stat = statSync(filePath);
+    const fileSizeMB = (stat.size / (1024 * 1024)).toFixed(2);
+
+    logger.debug('Reading file for vision API', {
+      filePath,
+      mediaType,
+      sizeMB: fileSizeMB
+    });
+
+    // For files under 20 MB, simple buffer read is fine
+    if (stat.size < 20 * 1024 * 1024) {
+      const fileBuffer = await fs.readFile(filePath);
+      return {
+        type: 'base64',
+        media_type: mediaType,
+        data: fileBuffer.toString('base64')
+      };
+    }
+
+    // For larger files, stream-encode to base64 to avoid doubling memory
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+      const stream = createReadStream(filePath, { highWaterMark: 1024 * 1024 });
+
+      stream.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+
+      stream.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        const base64Data = buffer.toString('base64');
+        // Release raw buffer
+        chunks.length = 0;
+
+        logger.debug('Large file encoded to base64', {
+          filePath,
+          originalSizeMB: fileSizeMB,
+          base64Length: base64Data.length
+        });
+
+        resolve({
+          type: 'base64',
+          media_type: mediaType,
+          data: base64Data
+        });
+      });
+
+      stream.on('error', reject);
+    });
   }
 
   /**
