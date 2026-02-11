@@ -1,6 +1,7 @@
 const logger = require('../../platform/observability/logger');
 const correlationId = require('../../platform/observability/CorrelationId');
 const db = require('../../platform/config/database');
+const { isBlueprintCompleted } = require('../blueprints/blueprintStatus');
 
 class BidsService {
   constructor() {
@@ -42,8 +43,12 @@ class BidsService {
 
       const blueprint = blueprintResult.rows[0];
 
-      if (blueprint.status !== 'completed') {
-        throw new BidError('Blueprint analysis not complete', 'ANALYSIS_INCOMPLETE', corrId);
+      if (!isBlueprintCompleted(blueprint.status)) {
+        throw new BidError(
+          `Blueprint analysis not complete (status: ${blueprint.status})`,
+          'ANALYSIS_INCOMPLETE',
+          corrId
+        );
       }
 
       // Get all fixtures for this blueprint

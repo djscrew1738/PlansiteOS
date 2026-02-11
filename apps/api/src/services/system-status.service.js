@@ -2,6 +2,7 @@ const os = require('os');
 const db = require('../platform/config/database');
 const logger = require('../platform/observability/logger');
 const Anthropic = require('@anthropic-ai/sdk');
+const { COMPLETED_BLUEPRINT_STATUSES } = require('../modules/blueprints/blueprintStatus');
 
 class SystemStatusService {
   constructor() {
@@ -323,12 +324,12 @@ class SystemStatusService {
       const stats = await db.query(`
         SELECT
           COUNT(*) as total,
-          COUNT(*) FILTER (WHERE status = 'processed') as processed,
-          COUNT(*) FILTER (WHERE status = 'processing') as processing,
+          COUNT(*) FILTER (WHERE status = ANY($1::text[])) as processed,
+          COUNT(*) FILTER (WHERE status IN ('pending', 'processing')) as processing,
           COUNT(*) FILTER (WHERE status = 'failed') as failed,
           MAX(created_at) as last_upload
         FROM blueprints
-      `);
+      `, [COMPLETED_BLUEPRINT_STATUSES]);
 
       // Check for recent processing activity (last 24 hours)
       const recentActivity = await db.query(`
