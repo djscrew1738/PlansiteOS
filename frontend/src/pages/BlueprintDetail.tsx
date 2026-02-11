@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useBlueprint, useBlueprintSummary, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 import { blueprintsApi } from '../lib/api';
 import type { BlueprintStatus } from '../types/api';
 
@@ -32,6 +33,7 @@ export default function BlueprintDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const { confirm } = useConfirm();
   useDocumentTitle('Blueprint Details');
 
   // API hooks
@@ -44,7 +46,14 @@ export default function BlueprintDetail() {
   const summary = summaryData?.summary;
 
   const handleDelete = async () => {
-    if (!id || !confirm('Are you sure you want to delete this blueprint?')) return;
+    if (!id) return;
+    const confirmed = await confirm({
+      title: 'Delete Blueprint',
+      message: 'Are you sure you want to delete this blueprint? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success('Blueprint deleted');

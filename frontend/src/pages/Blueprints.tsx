@@ -25,6 +25,7 @@ import ErrorState from '../components/ui/ErrorState';
 import { BlueprintsSkeleton } from './BlueprintsSkeleton';
 import { useBlueprints, useUploadBlueprint, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 import { blueprintsApi } from '../lib/api';
 import type { Blueprint, BlueprintStatus } from '../types/api';
 
@@ -478,6 +479,8 @@ export default function Blueprints() {
   const [isDragging, setIsDragging] = useState(false);
   const [generatingBidId, setGeneratingBidId] = useState<string | null>(null);
 
+  const { confirm } = useConfirm();
+
   // API Hooks
   const { data, isLoading, error, refetch } = useBlueprints();
   const deleteMutation = useDeleteBlueprint();
@@ -495,7 +498,13 @@ export default function Blueprints() {
 
   // Handlers
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this blueprint?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Blueprint',
+      message: 'Are you sure you want to delete this blueprint? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success('Blueprint deleted');

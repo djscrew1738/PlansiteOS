@@ -16,6 +16,7 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 // Lead type definition
 interface Lead {
@@ -134,6 +135,7 @@ export default function Leads() {
   const [showAddLead, setShowAddLead] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const toast = useToast();
+  const { confirm } = useConfirm();
 
   // New lead form state
   const [newLead, setNewLead] = useState({
@@ -215,8 +217,14 @@ export default function Leads() {
     ));
   };
 
-  const handleDeleteLead = (leadId: string) => {
-    if (!confirm('Are you sure you want to delete this lead?')) return;
+  const handleDeleteLead = async (leadId: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Lead',
+      message: 'Are you sure you want to delete this lead? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     setLeads(prev => prev.filter(lead => lead.id !== leadId));
     setShowDetail(false);
     setSelectedLead(null);
