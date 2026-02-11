@@ -9,6 +9,8 @@ import {
   PlusIcon,
   CloudArrowUpIcon,
   ChartBarIcon,
+  WrenchScrewdriverIcon,
+  CpuChipIcon,
 } from '@heroicons/react/24/outline';
 import { useBids, useBlueprints } from '../hooks/useApi';
 import type { Blueprint, Bid } from '../types/api';
@@ -117,6 +119,19 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             {!search && (
               <Command.Group heading="Quick Actions" className="text-xs text-slate-500 px-2 py-2 font-medium">
                 <Command.Item
+                  onSelect={() => handleSelect(() => navigate('/analyzer'))}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-800 text-slate-300"
+                >
+                  <div className="p-2 rounded bg-cyan-500/10">
+                    <CpuChipIcon className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Blueprint Analyzer</p>
+                    <p className="text-xs text-slate-500">AI-powered blueprint analysis</p>
+                  </div>
+                </Command.Item>
+
+                <Command.Item
                   onSelect={() => handleSelect(() => navigate('/estimates'))}
                   className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-800 text-slate-300"
                 >
@@ -145,6 +160,20 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 </Command.Item>
 
                 <Command.Item
+                  onSelect={() => handleSelect(() => navigate('/jobs'))}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-800 text-slate-300"
+                >
+                  <div className="p-2 rounded bg-orange-500/10">
+                    <WrenchScrewdriverIcon className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Active Jobs</p>
+                    <p className="text-xs text-slate-500">Track job progress and schedules</p>
+                  </div>
+                  <span className="text-xs text-slate-600">⌘J</span>
+                </Command.Item>
+
+                <Command.Item
                   onSelect={() => handleSelect(() => navigate('/leads'))}
                   className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-800 text-slate-300"
                 >
@@ -152,8 +181,8 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     <UserGroupIcon className="w-4 h-4 text-purple-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Add Lead</p>
-                    <p className="text-xs text-slate-500">Create a new lead</p>
+                    <p className="text-sm font-medium">Customers</p>
+                    <p className="text-xs text-slate-500">Manage customer contacts</p>
                   </div>
                   <span className="text-xs text-slate-600">⌘L</span>
                 </Command.Item>

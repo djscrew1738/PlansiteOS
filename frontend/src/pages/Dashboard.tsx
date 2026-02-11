@@ -19,6 +19,51 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useBids, useBlueprints, useHealth, useBidStatistics } from '../hooks/useApi';
 import { getShortcutDisplay } from '../hooks/useKeyboard';
 import { DashboardSkeleton } from './DashboardSkeleton';
+import { JOBS_DATA } from '../lib/blueprintData';
+
+function ActiveJobsPreview() {
+  const previewJobs = JOBS_DATA.slice(0, 4);
+  return (
+    <div className="overflow-x-auto -mx-4">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-800">
+            <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase">Job</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase">Phase</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase">Progress</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase">Value</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-slate-400 uppercase">Due</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-800">
+          {previewJobs.map((job) => (
+            <tr key={job.id} className="hover:bg-slate-800/50">
+              <td className="px-4 py-2.5 text-slate-200 font-medium">{job.name}</td>
+              <td className="px-4 py-2.5">
+                <Badge variant={job.phaseVariant === 'orange' ? 'yellow' : job.phaseVariant === 'green' ? 'green' : 'blue'} size="sm">
+                  {job.phase}
+                </Badge>
+              </td>
+              <td className="px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${job.progress >= 60 ? 'bg-green-400' : 'bg-blue-400'}`}
+                      style={{ width: `${job.progress}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-xs text-slate-400">{job.progress}%</span>
+                </div>
+              </td>
+              <td className="px-4 py-2.5 font-mono text-slate-300 font-medium">{job.value}</td>
+              <td className="px-4 py-2.5 text-slate-400">{job.dueDate}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 // Static color class mappings (Tailwind requires full class names at build time)
 const STAT_BG_COLORS: Record<string, string> = {
@@ -314,6 +359,21 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* Active Jobs Preview */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Active Jobs</CardTitle>
+            <Link to="/jobs">
+              <Button variant="ghost" size="sm">View All →</Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ActiveJobsPreview />
+        </CardContent>
+      </Card>
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -325,12 +385,20 @@ export default function Dashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link to="/blueprints">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <Link to="/analyzer">
               <Button variant="primary" className="w-full justify-between">
                 <span className="flex items-center">
-                  <PlusIcon className="w-5 h-5 mr-2" />
-                  New Project
+                  <DocumentTextIcon className="w-5 h-5 mr-2" />
+                  Analyze Blueprint
+                </span>
+              </Button>
+            </Link>
+            <Link to="/blueprints">
+              <Button variant="secondary" className="w-full justify-between">
+                <span className="flex items-center">
+                  <CloudArrowUpIcon className="w-5 h-5 mr-2" />
+                  Upload Blueprint
                 </span>
                 <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
                   {getShortcutDisplay('mod+u')}
@@ -348,14 +416,14 @@ export default function Dashboard() {
                 </kbd>
               </Button>
             </Link>
-            <Link to="/blueprints">
+            <Link to="/jobs">
               <Button variant="secondary" className="w-full justify-between">
                 <span className="flex items-center">
-                  <CloudArrowUpIcon className="w-5 h-5 mr-2" />
-                  Upload Blueprint
+                  <WrenchScrewdriverIcon className="w-5 h-5 mr-2" />
+                  View Jobs
                 </span>
                 <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold bg-slate-800/50 border border-slate-700 rounded">
-                  {getShortcutDisplay('mod+u')}
+                  {getShortcutDisplay('mod+j')}
                 </kbd>
               </Button>
             </Link>
