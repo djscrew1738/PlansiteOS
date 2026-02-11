@@ -187,6 +187,35 @@ export interface HealthStatus {
   };
 }
 
+// Upload limits returned by the server
+export interface UploadLimits {
+  maxFileSize: number;
+  maxFileSizeHuman: string;
+  allowedExtensions: string[];
+  allowedMimeTypes: string[];
+  maxFiles: number;
+}
+
+// Batch upload response
+export interface BatchUploadResponse {
+  success: boolean;
+  correlationId: string;
+  totalFiles: number;
+  successCount: number;
+  failedCount: number;
+  results: Array<{
+    fileName: string;
+    success: boolean;
+    blueprintId?: string;
+    fileSize?: number;
+    fileSizeHuman?: string;
+    fileHash?: string;
+    pageCount?: number | null;
+    status?: string;
+    errors?: string[];
+  }>;
+}
+
 // API Error
 export interface ApiError {
   success: false;

@@ -76,8 +76,9 @@ export default function UploadPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
+              {/* Step progress bar */}
               <div className="flex gap-1">
-                {upload.progress.steps.map((step, i) => {
+                {upload.progress.steps.map((step: string, i: number) => {
                   const currentIdx = upload.progress!.steps.indexOf(upload.progress!.current);
                   const isCurrent = i === currentIdx;
                   const isPast = i < currentIdx;
@@ -95,6 +96,22 @@ export default function UploadPage() {
                 <span className="capitalize">{upload.progress.current.replace(/_/g, ' ')}</span>
                 <span>{upload.progress.steps.indexOf(upload.progress.current) + 1} / {upload.progress.steps.length}</span>
               </div>
+
+              {/* Page-level progress (for large PDFs) */}
+              {upload.progress.pagesTotal > 0 && (
+                <div className="mt-3 space-y-1">
+                  <div className="flex justify-between text-xs text-slate-400">
+                    <span>Pages processed</span>
+                    <span>{upload.progress.pagesDone ?? 0} / {upload.progress.pagesTotal}</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${upload.progress.pagesPercent ?? 0}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
