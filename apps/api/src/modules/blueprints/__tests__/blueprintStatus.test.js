@@ -18,3 +18,25 @@ describe('blueprintStatus helpers', () => {
     expect(isBlueprintCompleted('unknown')).toBe(false);
   });
 });
+
+describe('BLUEPRINT_STATUS constants', () => {
+  it('should have exactly 5 status values', () => {
+    const statusValues = Object.values(BLUEPRINT_STATUS);
+    expect(statusValues).toHaveLength(5);
+    expect(statusValues).toEqual([
+      'pending',
+      'processing',
+      'completed',
+      'failed',
+      'processed-dxf'
+    ]);
+  });
+});
+
+describe('COMPLETED_BLUEPRINT_STATUSES', () => {
+  it('should contain only completed and processed-dxf', () => {
+    expect(COMPLETED_BLUEPRINT_STATUSES).toHaveLength(2);
+    expect(COMPLETED_BLUEPRINT_STATUSES).toContain('completed');
+    expect(COMPLETED_BLUEPRINT_STATUSES).toContain('processed-dxf');
+  });
+});
