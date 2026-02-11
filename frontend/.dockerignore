@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.storybook
+*.stories.tsx
+*.stories.ts
+*.test.tsx
+*.test.ts
+src/test
+src/stories
+CHANGELOG.md
+RELEASE_NOTES_v3.0.0.md
+UI_DEVELOPMENT_SUMMARY.md
+VERSION_3.0.0_SUMMARY.md
+README.md
+vitest.config.ts
+vitest.shims.d.ts

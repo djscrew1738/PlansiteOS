@@ -11,9 +11,9 @@ export function exportEstimatesToCSV(bids: Bid[], filename = 'estimates.csv') {
     'Customer Name': bid.customer_name || '',
     Status: bid.status,
     'Grand Total': bid.grand_total,
-    'Labor Cost': bid.labor_cost,
-    'Material Cost': bid.material_cost,
-    'Markup %': bid.markup_percentage,
+    'Labor Total': bid.labor_total,
+    'Material Total': bid.material_total,
+    'Markup %': bid.markup_percent,
     'Created At': new Date(bid.created_at).toLocaleDateString(),
     'Updated At': new Date(bid.updated_at).toLocaleDateString(),
   }));
@@ -32,8 +32,6 @@ export function exportBlueprintsToCSV(blueprints: Blueprint[], filename = 'bluep
     'File Name': bp.file_name,
     Status: bp.status,
     'Total Fixtures': bp.total_fixtures,
-    'Total Bathrooms': bp.total_bathrooms || 0,
-    'Total Kitchens': bp.total_kitchens || 0,
     'Created At': new Date(bp.created_at).toLocaleDateString(),
     'Updated At': new Date(bp.updated_at).toLocaleDateString(),
   }));
@@ -45,7 +43,7 @@ export function exportBlueprintsToCSV(blueprints: Blueprint[], filename = 'bluep
 /**
  * Generic CSV export function
  */
-export function exportToCSV<T extends Record<string, any>>(
+export function exportToCSV<T extends Record<string, unknown>>(
   data: T[],
   filename: string
 ) {

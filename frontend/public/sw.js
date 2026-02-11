@@ -1,5 +1,12 @@
-const CACHE_NAME = 'pipelineos-v1';
-const OFFLINE_URLS = ['/', '/index.html', '/offline.html'];
+const CACHE_VERSION = 'plansiteos-v3';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+
+// Static assets to pre-cache
+const PRECACHE_URLS = [
+  '/',
+  '/offline.html',
+];
 
 /**
  * Minimal IndexedDB helper (no deps).
@@ -7,7 +14,7 @@ const OFFLINE_URLS = ['/', '/index.html', '/offline.html'];
  */
 function openDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('pipelineos-db', 1);
+    const req = indexedDB.open('plansiteos-db', 1);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('pending-uploads')) {
@@ -40,45 +47,90 @@ async function dbDelete(storeName, id) {
   });
 }
 
-// Cache on install
+// Install: pre-cache static assets
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS)));
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-// Network-first, fallback to cache
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-
-  // Skip non-GET and API calls (we handle uploads separately client-side)
-  if (request.method !== 'GET' || request.url.includes('/api/')) return;
-
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Cache only successful, basic responses
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          try {
-            cache.put(request, clone);
-          } catch {
-            // ignore cache failures (opaque responses etc.)
-          }
-        });
-        return response;
-      })
-      .catch(async () => {
-        const cached = await caches.match(request);
-        return cached || caches.match('/offline.html');
-      })
+  event.waitUntil(
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Background sync retry
+// Activate: clean up old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter((name) => name !== STATIC_CACHE && name !== RUNTIME_CACHE)
+            .map((name) => caches.delete(name))
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+// Fetch: network-first for navigation, stale-while-revalidate for assets
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests and API calls
+  if (request.method !== 'GET') return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  // Navigation requests: network-first with offline fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the latest version of the page
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => {
+            try { cache.put(request, clone); } catch { /* ignore */ }
+          });
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return cached || caches.match('/offline.html');
+        })
+    );
+    return;
+  }
+
+  // Static assets (JS, CSS, images): stale-while-revalidate
+  if (
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.match(/\.(png|jpg|jpeg|svg|webp|ico|woff2?)$/)
+  ) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(RUNTIME_CACHE).then((cache) => {
+                try { cache.put(request, clone); } catch { /* ignore */ }
+              });
+            }
+            return response;
+          })
+          .catch(() => cached);
+
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+});
+
+// Background sync: retry failed uploads
 self.addEventListener('sync', (event) => {
   if (event.tag === 'blueprint-upload') {
     event.waitUntil(retryFailedUploads());
@@ -96,23 +148,22 @@ async function retryFailedUploads() {
       const res = await fetch(item.url, {
         method: item.method || 'POST',
         headers,
-        body
+        body,
       });
 
       if (res.ok) {
         await dbDelete('pending-uploads', item.id);
         // Notify clients of successful upload
-        self.clients.matchAll().then(clients => {
-          clients.forEach(client => {
-            client.postMessage({
-              type: 'UPLOAD_SUCCESS',
-              uploadId: item.id
-            });
+        const clients = await self.clients.matchAll();
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'UPLOAD_SUCCESS',
+            uploadId: item.id,
           });
         });
       }
     } catch (e) {
-      // keep it queued
+      // Keep it queued for next sync
       console.log('Retry failed; will try later', e);
     }
   }

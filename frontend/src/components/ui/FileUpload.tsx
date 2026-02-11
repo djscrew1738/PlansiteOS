@@ -72,7 +72,7 @@ export default function FileUpload({
         preview: createFilePreview(file),
         progress: 0,
         status: error ? 'error' : 'pending',
-        error,
+        error: error ?? undefined,
       });
     }
 

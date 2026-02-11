@@ -147,16 +147,16 @@ export default function PageViewer() {
     }
 
     try {
+      const pixelDist = Math.sqrt(
+        Math.pow(points[1].x - points[0].x, 2) + Math.pow(points[1].y - points[0].y, 2)
+      );
+      const realDist = Number(distance);
       await setCalibrationMutation.mutateAsync({
         pageId,
-        data: {
-          p1x: Math.round(points[0].x),
-          p1y: Math.round(points[0].y),
-          p2x: Math.round(points[1].x),
-          p2y: Math.round(points[1].y),
-          realDistance: Number(distance),
-          realUnit: unit,
-        },
+        pixelDistance: pixelDist,
+        realDistance: realDist,
+        realUnit: unit as 'FT' | 'IN' | 'M' | 'CM',
+        pixelsPerUnit: pixelDist / realDist,
       });
       toast.success('Calibration saved', `Scale: ${distance} ${unit.toLowerCase()}`);
       refetchCalibration();
@@ -199,8 +199,7 @@ export default function PageViewer() {
         <div className="flex-1">
           <h1 className="text-lg font-bold text-slate-100">Page {activePage.pageNumber}</h1>
           <p className="text-xs text-slate-400">
-            {activePage.widthPx} x {activePage.heightPx} px
-            {activePage.dpiEstimated && ` • ${activePage.dpiEstimated} DPI`}
+            Page {activePage.pageNumber}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -249,7 +248,7 @@ export default function PageViewer() {
               }`}
             >
               <img
-                src={pagesApi.thumbUrl(page.id)}
+                src={pagesApi.imageUrl(page.id)}
                 alt={`Page ${page.pageNumber}`}
                 className="w-full h-full object-cover"
               />

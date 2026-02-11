@@ -66,7 +66,7 @@ export function useUploadBlueprint() {
 
 export function useDeleteBlueprint() {
   const queryClient = useQueryClient();
-  return useMutation<{ success: boolean; message: string }, ApiError, string>({
+  return useMutation<{ success: boolean; message: string }, ApiError, string, { previousBlueprints: BlueprintsListResponse | undefined }>({
     mutationFn: (id) => api.blueprints.delete(id),
     onMutate: async (deletedId) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -76,16 +76,18 @@ export function useDeleteBlueprint() {
       const previousBlueprints = queryClient.getQueryData<BlueprintsListResponse>(queryKeys.blueprints);
 
       // Optimistically update to the new value
-      queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, (old) => ({
-        ...old,
-        blueprints: old?.blueprints.filter((bp) => bp.id !== deletedId) || [],
-      }));
+      if (previousBlueprints) {
+        queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, {
+          ...previousBlueprints,
+          blueprints: previousBlueprints.blueprints.filter((bp) => bp.id !== deletedId),
+        });
+      }
 
       // Return a context object with the snapshotted value
       return { previousBlueprints };
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err, newTodo, context) => {
+    onError: (_err, _deletedId, context) => {
       if (context?.previousBlueprints) {
         queryClient.setQueryData<BlueprintsListResponse>(queryKeys.blueprints, context.previousBlueprints);
       }
@@ -261,7 +263,8 @@ export function useUploadPolling(uploadId: string) {
       return blueprintToUpload(result.blueprint);
     },
     enabled: !!uploadId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      const data = query.state.data;
       // Stop polling once processing is complete
       if (data?.status === 'READY' || data?.status === 'FAILED') {
         return false;

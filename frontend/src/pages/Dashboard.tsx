@@ -6,8 +6,6 @@ import Badge from '../components/ui/Badge';
 import {
   WrenchScrewdriverIcon,
   DocumentTextIcon,
-  UserGroupIcon,
-  ChatBubbleLeftIcon,
   PlusIcon,
   CalculatorIcon,
   CloudArrowUpIcon,
@@ -18,6 +16,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useBids, useBlueprints, useHealth, useBidStatistics } from '../hooks/useApi';
 import { getShortcutDisplay } from '../hooks/useKeyboard';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { DashboardSkeleton } from './DashboardSkeleton';
 
 // Static color class mappings (Tailwind requires full class names at build time)
@@ -54,11 +53,13 @@ function formatRelativeTime(dateString: string): string {
 }
 
 export default function Dashboard() {
+  useDocumentTitle('Dashboard');
+
   // API hooks
   const { data: bidsData, isLoading: loadingBids } = useBids(1, 50);
   const { data: blueprintsData, isLoading: loadingBlueprints } = useBlueprints(1, 50);
   const { data: healthData } = useHealth();
-  const { data: statsData } = useBidStatistics();
+  useBidStatistics(); // Prefetch statistics
 
   // Calculate stats from real data
   const stats = useMemo(() => {
@@ -169,7 +170,7 @@ export default function Dashboard() {
       id: bid.id,
       job: bid.project_name,
       date: new Date(bid.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      status: 'upcoming' as const,
+      status: 'upcoming' as 'upcoming' | 'urgent',
     }));
   }, [bidsData]);
 
@@ -223,7 +224,7 @@ export default function Dashboard() {
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                   labelStyle={{ color: '#e2e8f0' }}
                   itemStyle={{ color: '#3b82f6' }}
-                  formatter={(value: number) => `$${value.toLocaleString()}`}
+                  formatter={(value) => `$${Number(value).toLocaleString()}`}
                 />
                 <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} />
               </LineChart>

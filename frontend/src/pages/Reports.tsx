@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import {
   BarChart,
@@ -15,7 +14,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import {
   CurrencyDollarIcon,
@@ -26,6 +24,7 @@ import {
   ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
 import { useBids, useBlueprints } from '../hooks/useApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { ReportsSkeleton } from './ReportsSkeleton';
 
 // Chart colors
@@ -41,6 +40,7 @@ const COLORS = {
 const PIE_COLORS = [COLORS.primary, COLORS.success, COLORS.warning, COLORS.danger, COLORS.purple];
 
 export default function Reports() {
+  useDocumentTitle('Reports & Analytics');
   const { data: bidsData, isLoading: loadingBids } = useBids(1, 100);
   const { data: blueprintsData, isLoading: loadingBlueprints } = useBlueprints(1, 100);
 
@@ -290,7 +290,7 @@ export default function Reports() {
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                     labelStyle={{ color: '#e2e8f0' }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
                   />
                   <Line type="monotone" dataKey="revenue" stroke={COLORS.primary} strokeWidth={2} dot={{ fill: COLORS.primary }} />
                 </LineChart>
@@ -313,12 +313,12 @@ export default function Reports() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {bidsByStatus.map((entry, index) => (
+                    {bidsByStatus.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                     ))}
                   </Pie>
@@ -378,7 +378,7 @@ export default function Reports() {
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                       labelStyle={{ color: '#e2e8f0' }}
-                      formatter={(value: number) => [value, 'Count']}
+                      formatter={(value) => [Number(value), 'Count']}
                     />
                     <Bar dataKey="count" fill={COLORS.success} radius={[0, 4, 4, 0]} />
                   </BarChart>

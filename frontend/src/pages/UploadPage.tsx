@@ -60,68 +60,13 @@ export default function UploadPage() {
           <ArrowLeftIcon className="w-5 h-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-slate-100">{upload.originalFilename}</h1>
+          <h1 className="text-xl font-bold text-slate-100">{upload.projectName}</h1>
           <p className="text-sm text-slate-400 mt-1">
-            {(upload.sizeBytes / 1024 / 1024).toFixed(2)} MB • {upload.mimeType}
+            {upload.totalFixtures} fixtures • {upload.status}
           </p>
         </div>
         <Badge variant={statusInfo.variant} size="lg">{statusInfo.label}</Badge>
       </div>
-
-      {/* Progress */}
-      {upload.progress && upload.status === 'PROCESSING' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Processing Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex gap-1">
-                {upload.progress.steps.map((step, i) => {
-                  const currentIdx = upload.progress!.steps.indexOf(upload.progress!.current);
-                  const isCurrent = i === currentIdx;
-                  const isPast = i < currentIdx;
-                  return (
-                    <div
-                      key={step}
-                      className={`h-2 flex-1 rounded-full transition-colors ${
-                        isCurrent ? 'bg-blue-500 animate-pulse' : isPast ? 'bg-green-500' : 'bg-slate-700'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-              <div className="flex justify-between text-xs text-slate-400">
-                <span className="capitalize">{upload.progress.current.replace(/_/g, ' ')}</span>
-                <span>{upload.progress.steps.indexOf(upload.progress.current) + 1} / {upload.progress.steps.length}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Error Message */}
-      {upload.errorMessage && (
-        <Card className="border-red-500/50 bg-red-500/10">
-          <p className="text-red-400">{upload.errorMessage}</p>
-        </Card>
-      )}
-
-      {/* Warnings */}
-      {upload.warnings && Object.keys(upload.warnings).length > 0 && (
-        <Card className="border-yellow-500/50 bg-yellow-500/10">
-          <CardHeader>
-            <CardTitle className="text-yellow-400">Warnings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="text-sm text-yellow-300 list-disc list-inside">
-              {Object.entries(upload.warnings).map(([key, value]) => (
-                <li key={key}>{key}: {String(value)}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Pages Grid */}
       {upload.status === 'READY' && upload.pages.length > 0 && (
@@ -141,7 +86,7 @@ export default function UploadPage() {
                   className="group relative aspect-square bg-slate-800 rounded-lg border border-slate-700 overflow-hidden hover:border-blue-500 transition-colors"
                 >
                   <img
-                    src={pagesApi.thumbUrl(page.id)}
+                    src={pagesApi.imageUrl(page.id)}
                     alt={`Page ${page.pageNumber}`}
                     className="w-full h-full object-cover"
                   />

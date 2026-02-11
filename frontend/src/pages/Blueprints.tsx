@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
@@ -21,10 +21,11 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
-import BlueprintCardSkeleton from '../components/BlueprintCardSkeleton';
 import ErrorState from '../components/ui/ErrorState';
 import { BlueprintsSkeleton } from './BlueprintsSkeleton';
 import { useBlueprints, useUploadBlueprint, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 import { blueprintsApi } from '../lib/api';
 import type { Blueprint, BlueprintStatus } from '../types/api';
 
@@ -466,6 +467,7 @@ function BlueprintCard({
 }
 
 export default function Blueprints() {
+  useDocumentTitle('Blueprints');
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -476,6 +478,8 @@ export default function Blueprints() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [generatingBidId, setGeneratingBidId] = useState<string | null>(null);
+
+  const { confirm } = useConfirm();
 
   // API Hooks
   const { data, isLoading, error, refetch } = useBlueprints();
@@ -494,7 +498,13 @@ export default function Blueprints() {
 
   // Handlers
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this blueprint?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Blueprint',
+      message: 'Are you sure you want to delete this blueprint? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success('Blueprint deleted');
