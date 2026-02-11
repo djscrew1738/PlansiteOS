@@ -13,6 +13,7 @@ const correlationId = require('../../platform/observability/CorrelationId');
 const { getTransactionManager } = require('../../platform/config/TransactionManager');
 const db = require('../../platform/config/database');
 const logger = require('../../platform/observability/logger');
+const { BLUEPRINT_STATUS } = require('../../modules/blueprints/blueprintStatus');
 
 /**
  * POST /api/blueprints/upload
@@ -64,7 +65,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
     const projectAddress = req.body.projectAddress || null;
 
     let analysisResults = null;
-    let blueprintStatus = 'pending'; // Default status
+    let blueprintStatus = BLUEPRINT_STATUS.PENDING;
 
     // Check if the uploaded file is a DXF
     const isDxf = fileMetadata.path.toLowerCase().endsWith('.dxf');
@@ -76,14 +77,14 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
       });
       // Process DXF and store directly
       analysisResults = await dxfProcessor.processDxfFile(fileMetadata.path);
-      blueprintStatus = 'processed-dxf'; // Custom status for DXF files
+      blueprintStatus = BLUEPRINT_STATUS.PROCESSED_DXF;
     } else {
       // Existing AI analysis for images/PDFs
       logger.info('Starting AI analysis for image/PDF', {
         correlationId: corrId,
         filePath: fileMetadata.path
       });
-      blueprintStatus = 'processing';
+      blueprintStatus = BLUEPRINT_STATUS.PROCESSING;
     }
     
     // Create blueprint record in database
@@ -108,7 +109,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
           blueprintStatus, // Use determined status
           corrId,
           analysisResults ? JSON.stringify(analysisResults) : null, // Store DXF data directly
-          analysisResults ? db.fn.now() : null // Set completion time for DXF
+          analysisResults ? new Date() : null
         ]
       );
 
@@ -143,6 +144,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
       // Save AI analysis results
       await BlueprintService.saveAnalysisResults(blueprintId, aiAnalysisResults);
       analysisResults = aiAnalysisResults; // Update analysisResults for response
+      blueprintStatus = BLUEPRINT_STATUS.COMPLETED;
 
       logger.info('AI Blueprint analysis completed and saved', {
         correlationId: corrId,
@@ -161,7 +163,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
         projectAddress: projectAddress,
         fileName: fileMetadata.originalName,
         fileSize: fileMetadata.size,
-        status: analysisResults ? 'completed' : blueprintStatus // If DXF, it's completed. If AI, it's processing for now
+        status: blueprintStatus
       },
       analysis: analysisResults
     });
@@ -507,7 +509,7 @@ router.post('/:id/annotate', async (req, res, _next) => {
     const originalPath = blueprintRecord.rows[0].file_path;
 
     // Generate annotated blueprint
-    const BlueprintVisualizationService = require('../services/BlueprintVisualizationService');
+    const BlueprintVisualizationService = require('../../modules/blueprints/BlueprintVisualizationService');
 
     const annotatedPath = await BlueprintVisualizationService.createAnnotatedBlueprint(
       originalPath,

@@ -8,3 +8,4 @@ __pycache__/
 .venv/
 apps/api/src/logs/
 docs/plans/
+.worktrees/

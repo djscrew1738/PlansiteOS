@@ -19,6 +19,8 @@ app.use((req, res, next) => {
     'http://localhost:5001',
     'http://localhost:8090',
     'http://100.109.158.92:8099',
+    'http://100.115.136.62:8099',
+    'http://acer-ai.taildf2809.ts.net:8099',
     'https://ctlplumbingllc.com',
     'https://www.ctlplumbingllc.com',
     'https://app.ctlplumbingllc.com',
