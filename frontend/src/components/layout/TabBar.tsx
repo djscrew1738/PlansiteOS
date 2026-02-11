@@ -32,7 +32,7 @@ export default function TabBar() {
   return (
     <>
       {/* Mobile Bottom Tab Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40">
+      <nav aria-label="Main navigation" className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40">
         <div className="grid grid-cols-6 h-16">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
@@ -55,12 +55,12 @@ export default function TabBar() {
       </nav>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 flex-col z-40">
+      <aside aria-label="Sidebar navigation" className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 flex-col z-40">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold text-slate-100">PlansiteOS</h1>
           <p className="text-xs text-slate-400 mt-1">Plumbing Estimator</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav aria-label="Main navigation" className="flex-1 p-4 space-y-1">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
             const Icon = isActive ? tab.iconSolid : tab.icon;

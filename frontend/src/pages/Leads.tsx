@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import Card, { CardHeader, CardTitle } from '../components/ui/Card';
+import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
@@ -12,10 +12,10 @@ import {
   PhoneIcon,
   ChatBubbleLeftIcon,
   MapPinIcon,
-  CalendarIcon,
   CheckCircleIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 // Lead type definition
 interface Lead {
@@ -126,6 +126,7 @@ const getSourceIcon = (source: string) => {
 };
 
 export default function Leads() {
+  useDocumentTitle('Leads');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activeSource, setActiveSource] = useState('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');

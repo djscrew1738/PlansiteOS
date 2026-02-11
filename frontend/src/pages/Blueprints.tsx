@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
@@ -21,10 +21,10 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
-import BlueprintCardSkeleton from '../components/BlueprintCardSkeleton';
 import ErrorState from '../components/ui/ErrorState';
 import { BlueprintsSkeleton } from './BlueprintsSkeleton';
 import { useBlueprints, useUploadBlueprint, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { blueprintsApi } from '../lib/api';
 import type { Blueprint, BlueprintStatus } from '../types/api';
 
@@ -466,6 +466,7 @@ function BlueprintCard({
 }
 
 export default function Blueprints() {
+  useDocumentTitle('Blueprints');
   const navigate = useNavigate();
   const toast = useToast();
 

@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
@@ -18,17 +18,13 @@ import {
   EyeIcon,
   TrashIcon,
   ArrowPathIcon,
-  DocumentTextIcon as DocumentIcon,
   CurrencyDollarIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { DocumentTextIcon } from '@heroicons/react/24/solid';
 import { BlueprintsSkeleton } from './BlueprintsSkeleton';
 import ErrorState from '../components/ui/ErrorState';
 import { useBlueprints, useUploadBlueprint, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
-import type { Blueprint, BlueprintStatus } from '../types/api';
+import type { BlueprintStatus } from '../types/api';
 
 // Status badge mapping
 const statusBadges: Record<BlueprintStatus, { variant: 'blue' | 'yellow' | 'green' | 'red'; label: string }> = {
@@ -61,7 +57,7 @@ function UploadModal({
 }) {
   const [projectName, setProjectName] = useState('');
   const [projectAddress, setProjectAddress] = useState('');
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [_files, setFiles] = useState<FileWithPreview[]>([]);
   const [errors, setErrors] = useState<{ projectName?: string; projectAddress?: string }>({});
   const uploadMutation = useUploadBlueprint();
   const toast = useToast();
@@ -201,9 +197,9 @@ export default function BlueprintsEnhanced() {
   const handleGenerateBid = async (id: string) => {
     setGeneratingBidId(id);
     try {
-      const result = await generateBidMutation.mutateAsync(id);
+      await generateBidMutation.mutateAsync({ blueprintId: id });
       toast.success('Bid Generated', 'Navigate to estimates to view the bid');
-      setTimeout(() => navigate(`/estimates`), 1500);
+      setTimeout(() => navigate('/estimates'), 1500);
     } catch (err) {
       toast.error('Error', 'Failed to generate bid');
     } finally {

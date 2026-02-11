@@ -13,8 +13,7 @@ import Popover from '../components/ui/Popover';
 import Progress from '../components/ui/Progress';
 import Badge from '../components/ui/Badge';
 import FormLayout from '../components/templates/FormLayout';
-import WizardLayout from '../components/templates/WizardLayout';
-import { PlusIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
 const cityOptions: ComboboxOption[] = [
   { value: 'nyc', label: 'New York', description: 'New York, USA' },
@@ -26,7 +25,7 @@ export default function ComponentShowcase() {
   // State for interactive components
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [_files, setFiles] = useState<FileWithPreview[]>([]);
   const [tasks, setTasks] = useState<DragDropItem[]>([
     { id: '1', content: 'Design mockups' },
     { id: '2', content: 'Develop frontend' },
@@ -34,7 +33,7 @@ export default function ComponentShowcase() {
   ]);
   const [notifications, setNotifications] = useState(true);
   const [volume, setVolume] = useState(75);
-  const [uploadProgress, setUploadProgress] = useState(65);
+  const [uploadProgress] = useState(65);
 
   return (
     <div className="space-y-8 p-8">

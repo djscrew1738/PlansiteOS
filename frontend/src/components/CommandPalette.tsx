@@ -11,7 +11,6 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { useBids, useBlueprints } from '../hooks/useApi';
-import type { Blueprint, Bid } from '../types/api';
 
 interface CommandPaletteProps {
   open: boolean;

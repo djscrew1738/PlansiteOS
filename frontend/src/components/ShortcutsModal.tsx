@@ -1,5 +1,5 @@
 import Modal from './ui/Modal';
-import { getShortcutDisplay, shortcuts } from '../hooks/useKeyboard';
+import { getShortcutDisplay } from '../hooks/useKeyboard';
 
 interface ShortcutsModalProps {
   isOpen: boolean;

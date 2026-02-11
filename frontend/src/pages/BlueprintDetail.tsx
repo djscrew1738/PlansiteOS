@@ -13,10 +13,9 @@ import {
   TrashIcon,
   ArrowDownTrayIcon,
   MapPinIcon,
-  CalendarIcon,
-  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import { useBlueprint, useBlueprintSummary, useDeleteBlueprint, useGenerateBid } from '../hooks/useApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { blueprintsApi } from '../lib/api';
 import type { BlueprintStatus } from '../types/api';
 
@@ -33,6 +32,7 @@ export default function BlueprintDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  useDocumentTitle('Blueprint Details');
 
   // API hooks
   const { data: blueprintData, isLoading, error, refetch } = useBlueprint(id || '');

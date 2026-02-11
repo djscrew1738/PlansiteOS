@@ -23,6 +23,7 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import { useBids, useBid, useCloneBid, useUpdateBidStatus, useDeleteBid } from '../hooks/useApi';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useToast } from '../components/ui/Toast';
 import { useSelectionStore } from '../stores/selectionStore';
 import { EstimatesSkeleton } from './EstimatesSkeleton';
@@ -50,6 +51,7 @@ interface CalculatorValues {
 }
 
 export default function Estimates() {
+  useDocumentTitle('Estimates');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCalculator, setShowCalculator] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
@@ -175,7 +177,7 @@ export default function Estimates() {
 
     try {
       const deletePromises = Array.from(selectedEstimates).map(id =>
-        deleteBid.mutateAsync(String(id))
+        deleteBid.mutateAsync(id)
       );
       await Promise.all(deletePromises);
       toast.success('Estimates deleted', `${selectedEstimates.size} estimate(s) removed`);
@@ -957,7 +959,7 @@ export default function Estimates() {
 
                 for (const bid of estimatesWithEmail) {
                   try {
-                    await updateStatus.mutateAsync({ id: String(bid.id), status: 'sent' });
+                    await updateStatus.mutateAsync({ id: bid.id, status: 'sent' });
                   } catch (err) {
                     console.error(`Failed to send estimate ${bid.id}`, err);
                   }

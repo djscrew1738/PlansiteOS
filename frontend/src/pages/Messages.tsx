@@ -11,6 +11,7 @@ import {
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 // Mock data
 const conversations = [
@@ -93,6 +94,7 @@ const quickReplies = [
 ];
 
 export default function Messages() {
+  useDocumentTitle('Messages');
   const [activeConversation, setActiveConversation] = useState(1);
   const [messageInput, setMessageInput] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'builders' | 'homeowners'>('all');

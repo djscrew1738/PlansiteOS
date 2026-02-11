@@ -18,9 +18,7 @@ import {
   ArrowDownTrayIcon,
   EyeIcon,
   ArrowPathIcon,
-  TrashIcon,
   FunnelIcon,
-  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { useBids } from '../hooks/useApi';
 import { EstimatesSkeleton } from './EstimatesSkeleton';
@@ -40,13 +38,13 @@ export default function EstimatesEnhanced() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
-  const [minAmount, setMinAmount] = useState(0);
+  const [minAmount] = useState(0);
   const [maxAmount, setMaxAmount] = useState(100000);
   const [showArchived, setShowArchived] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  const { data: bidsData, isLoading, error, refetch } = useBids(1, 50, statusFilter === 'all' ? undefined : statusFilter);
-  const toast = useToast();
+  const { data: bidsData, isLoading, refetch } = useBids(1, 50, statusFilter === 'all' ? undefined : statusFilter);
+  useToast(); // Initialize toast for future use
 
   // Filter and sort estimates
   const filteredEstimates = useMemo(() => {
@@ -85,11 +83,16 @@ export default function EstimatesEnhanced() {
   }, [bidsData]);
 
   const getStatusBadge = (status: BidStatus) => {
-    const badges = {
-      draft: { variant: 'slate' as const, label: 'Draft' },
-      sent: { variant: 'blue' as const, label: 'Sent' },
-      accepted: { variant: 'green' as const, label: 'Accepted' },
-      rejected: { variant: 'red' as const, label: 'Rejected' },
+    const badges: Record<string, { variant: 'slate' | 'blue' | 'green' | 'red' | 'yellow' | 'purple'; label: string }> = {
+      draft: { variant: 'slate', label: 'Draft' },
+      pending_review: { variant: 'yellow', label: 'Pending' },
+      approved: { variant: 'green', label: 'Approved' },
+      sent: { variant: 'blue', label: 'Sent' },
+      viewed: { variant: 'purple', label: 'Viewed' },
+      accepted: { variant: 'green', label: 'Accepted' },
+      rejected: { variant: 'red', label: 'Rejected' },
+      expired: { variant: 'slate', label: 'Expired' },
+      archived: { variant: 'slate', label: 'Archived' },
     };
     return badges[status] || badges.draft;
   };
