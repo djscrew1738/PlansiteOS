@@ -145,7 +145,7 @@ const uploadBlueprint = multer({
  * @param {Object} file - Multer file object
  * @returns {Object} Validation result
  */
-function validateFile(file) {
+async function validateFile(file) {
   const errors = [];
 
   if (!file) {
@@ -160,7 +160,7 @@ function validateFile(file) {
 
   // Check if file exists on disk
   try {
-    fs.access(file.path);
+    await fs.access(file.path);
   } catch (_error) {
     errors.push('Uploaded file not accessible');
   }

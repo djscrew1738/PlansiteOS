@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "postinstall": "npm --prefix ../../packages_temp/db install --omit=dev && npm --prefix ../../packages_temp/ai-core install --omit=dev",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

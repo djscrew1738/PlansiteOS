@@ -35,7 +35,7 @@ router.post('/upload', uploadBlueprint.single('blueprint'), async (req, res, _ne
     }
 
     // Validate file
-    const validation = validateFile(req.file);
+    const validation = await validateFile(req.file);
     if (!validation.valid) {
       // Delete uploaded file
       await deleteFile(req.file.path);
