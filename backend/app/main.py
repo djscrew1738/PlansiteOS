@@ -35,6 +35,8 @@ ALLOWED_MIME_TYPES = {
     "image/png",
     "image/jpeg",
     "image/jpg",
+    "image/tiff",
+    "image/tif",
 }
 
 # Chunk size used when streaming an incoming upload to a temp file (1 MB).
@@ -79,21 +81,26 @@ async def create_project(payload: ProjectCreate, db: Session = Depends(get_db)):
 async def upload_blueprint(project_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Upload a blueprint file.
 
-    For large files the upload body is streamed to a temporary file rather
-    than being buffered entirely in memory, then uploaded to S3 using the
-    managed multi-part transfer.  This keeps memory usage bounded even for
-    very large PDFs (up to the configured ``UPLOAD_MAX_BYTES`` limit).
+    The upload body is streamed to a temporary file (never buffered in
+    memory), validated, uploaded to S3, and then a background processing
+    job is enqueued.  For PDFs the file is validated with poppler before
+    the job is queued so the user gets immediate feedback on corrupt files.
     """
     if file.content_type not in ALLOWED_MIME_TYPES:
-        raise HTTPException(status_code=400, detail="Unsupported file type")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{file.content_type}'. "
+                   f"Allowed: {', '.join(sorted(ALLOWED_MIME_TYPES))}",
+        )
 
     filename = _sanitize_filename(file.filename or "upload")
     upload_id = uuid.uuid4()
     storage_key_original = f"projects/{project_id}/uploads/{upload_id}/original/{filename}"
 
-    # Stream the incoming upload to a temp file so we never hold the whole
-    # payload in memory.
+    # ── Stream to temp file ──────────────────────────────────────────
     total_bytes = 0
+    import hashlib
+    hasher = hashlib.sha256()
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1])
     try:
         while True:
@@ -110,26 +117,51 @@ async def upload_blueprint(project_id: str, file: UploadFile = File(...), db: Se
                            f"{settings.upload_max_bytes // (1024 * 1024)} MB",
                 )
             tmp.write(chunk)
+            hasher.update(chunk)
         tmp.close()
+        content_hash = hasher.hexdigest()
 
         logger.info(
-            "Received upload %s: %d bytes -> temp %s",
-            upload_id, total_bytes, tmp.name,
+            "Received upload %s: %d bytes, sha256=%s",
+            upload_id, total_bytes, content_hash[:16],
         )
 
-        # Use managed transfer (multipart for large files)
+        # ── Validate PDF before uploading to S3 ─────────────────────
+        pdf_page_count = None
+        if file.content_type == "application/pdf":
+            from .processor import validate_pdf, get_pdf_page_count
+            ok, msg = validate_pdf(tmp.name)
+            if not ok:
+                os.unlink(tmp.name)
+                raise HTTPException(status_code=422, detail=f"Invalid PDF: {msg}")
+            pdf_page_count = get_pdf_page_count(tmp.name)
+            if pdf_page_count > settings.pdf_max_pages:
+                logger.warning(
+                    "PDF %s has %d pages (max %d) — will be capped during processing",
+                    upload_id, pdf_page_count, settings.pdf_max_pages,
+                )
+
+        # ── Upload to S3 ─────────────────────────────────────────────
         storage_client.upload_file(storage_key_original, tmp.name, file.content_type)
 
     finally:
-        # Clean up the temp file
         try:
             os.unlink(tmp.name)
         except OSError:
             pass
 
-    progress = {"steps": ["queued"], "current": "queued"}
+    # ── Create DB record ─────────────────────────────────────────────
+    progress = {
+        "steps": [
+            "queued", "validating", "fetching",
+            "processing", "uploading_pages", "writing_db", "done",
+        ],
+        "current": "queued",
+    }
     if file.content_type == "application/pdf":
-        progress["selectedPages"] = None  # None = all pages
+        progress["selectedPages"] = None
+        if pdf_page_count:
+            progress["pagesTotal"] = pdf_page_count
 
     upload = Upload(
         id=upload_id,
