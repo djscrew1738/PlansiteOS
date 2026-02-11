@@ -85,7 +85,7 @@ export default function DashboardLayout() {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">CTL Plumbing</p>
-              <p className="text-xs text-gray-500">ctlplumbingllc.com</p>
+              <p className="text-xs text-gray-500">acer-ai.taildf2809.ts.net</p>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function DashboardLayout() {
             </button>
             <div className="flex items-center space-x-4 ml-auto">
               <div className="text-sm text-gray-600">
-                Tailscale: <span className="text-primary-600 font-mono">100.109.158.92</span>
+                Tailscale: <span className="text-primary-600 font-mono">100.115.136.62</span>
               </div>
             </div>
           </div>

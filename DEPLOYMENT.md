@@ -146,9 +146,10 @@ cd PlansiteOS
 Create/edit `.env` file:
 ```env
 # Domain Configuration
-DOMAIN=app.ctlplumbingllc.com
+DOMAIN=acer-ai.taildf2809.ts.net
+MAGICDNS_DOMAIN=acer-ai.taildf2809.ts.net
 ADMIN_EMAIL=admin@ctlplumbingllc.com
-TAILSCALE_IP=100.109.158.92  # If using Tailscale
+TAILSCALE_IP=100.115.136.62
 
 # Database (Generate secure password!)
 POSTGRES_PASSWORD=CHANGE_THIS_SECURE_PASSWORD
@@ -166,8 +167,8 @@ S3_SECRET_KEY=CHANGE_THIS_SECURE_PASSWORD
 S3_BUCKET=plansite-blueprints
 
 # CORS & API
-CORS_ORIGIN=https://app.ctlplumbingllc.com
-VITE_API_BASE=https://app.ctlplumbingllc.com
+CORS_ORIGIN=http://acer-ai.taildf2809.ts.net:8099,http://100.115.136.62:8099
+VITE_API_BASE=http://acer-ai.taildf2809.ts.net:8099
 
 # AI Services
 ANTHROPIC_API_KEY=your-api-key-here
@@ -220,14 +221,14 @@ docker compose -f docker-compose.prod.yml logs -f caddy
 
 #### 7. Access Production Environment
 
-**With Domain (HTTPS)**:
-- **App**: https://app.ctlplumbingllc.com
-- **API**: https://app.ctlplumbingllc.com/api
-- **Health**: https://app.ctlplumbingllc.com/health
+**With MagicDNS (Tailscale)**:
+- **App**: http://acer-ai.taildf2809.ts.net:8099
+- **API**: http://acer-ai.taildf2809.ts.net:8099/api
+- **Health**: http://acer-ai.taildf2809.ts.net:8099/health
 
-**With Tailscale/Internal**:
-- **App**: http://100.109.158.92:8099
-- **API**: http://100.109.158.92:8099/api
+**With Tailscale IP (fallback)**:
+- **App**: http://100.115.136.62:8099
+- **API**: http://100.115.136.62:8099/api
 
 **Monitoring**:
 - **Prometheus**: http://YOUR_SERVER_IP:9090
@@ -255,8 +256,8 @@ docker compose -f docker-compose.prod.yml logs --tail=100 node-api
 # Health check endpoint
 curl http://localhost:8099/health
 
-# Or via domain
-curl https://app.ctlplumbingllc.com/health
+# Or via MagicDNS
+curl http://acer-ai.taildf2809.ts.net:8099/health
 ```
 
 ### Container Stats
@@ -338,8 +339,8 @@ docker compose -f docker-compose.prod.yml restart postgres
 # Check Caddy logs
 docker compose -f docker-compose.prod.yml logs caddy
 
-# Verify DNS is pointing to your server
-dig app.ctlplumbingllc.com
+# Verify MagicDNS resolves in your tailnet
+dig acer-ai.taildf2809.ts.net
 
 # Restart Caddy
 docker compose -f docker-compose.prod.yml restart caddy

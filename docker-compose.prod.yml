@@ -166,6 +166,7 @@ services:
       PORT: 5001
       DOMAIN: ${DOMAIN}
       TAILSCALE_IP: ${TAILSCALE_IP}
+      MAGICDNS_DOMAIN: ${MAGICDNS_DOMAIN:-acer-ai.taildf2809.ts.net}
       UPLOAD_PATH: /app/uploads
     volumes:
       - nodeapi_uploads:/app/uploads
@@ -200,6 +201,7 @@ services:
       DOMAIN: ${DOMAIN}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       TAILSCALE_IP: ${TAILSCALE_IP}
+      MAGICDNS_DOMAIN: ${MAGICDNS_DOMAIN:-acer-ai.taildf2809.ts.net}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

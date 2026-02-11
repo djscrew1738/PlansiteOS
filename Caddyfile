@@ -1,5 +1,5 @@
 # PlansiteOS - Caddy Configuration
-# Accessible via http://100.109.158.92:8099 or https://app.ctlplumbingllc.com
+# Accessible via http://100.115.136.62:8099 and http://acer-ai.taildf2809.ts.net:8099
 
 # Internal/Tailscale access
 :80 {
@@ -31,6 +31,36 @@
   }
 
   # Access logs
+  log {
+    output file /var/log/caddy/access.log
+    format json
+  }
+}
+
+# MagicDNS host access over Tailscale (HTTP on port 8099 mapped to container :80)
+http://{$MAGICDNS_DOMAIN:acer-ai.taildf2809.ts.net} {
+  encode zstd gzip
+
+  @api path /api/*
+  reverse_proxy @api node-api:5001
+
+  @health path /health
+  respond @health 200
+
+  reverse_proxy frontend:4173
+
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    X-XSS-Protection "1; mode=block"
+  }
+
+  @upload path /api/blueprints/* /api/projects/*/uploads
+  request_body @upload {
+    max_size 200MB
+  }
+
   log {
     output file /var/log/caddy/access.log
     format json
